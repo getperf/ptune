@@ -1,0 +1,50 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.env
+.DS_Store
+.atom/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VSCode
+.vscode/
+
+# Dart/Flutter/Pub
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.flutter-versions
+.packages
+.pub-cache/
+.pub/
+build/
+coverage/
+generated_plugin_registrant.cc
+.melody.yaml
+
+# Symbolication / Obfuscation
+app.*.symbols
+app.*.map.json
+
+# iOS/macOS CocoaPods
+ios/Pods/
+macos/Pods/
+macos/Flutter/GeneratedPluginRegistrant.swift
+
+# Demo / Local only files
+# assets/tasks.json
+
+# Doc build
+**/doc/api/
+**/ios/Flutter/.last_build_id

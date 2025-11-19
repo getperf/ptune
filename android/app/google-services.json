@@ -1,0 +1,158 @@
+{
+  "project_info": {
+    "project_number": "189748391236",
+    "project_id": "ptune-13a98",
+    "storage_bucket": "ptune-13a98.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:189748391236:android:088235abd1d1e50982fb11",
+        "android_client_info": {
+          "package_name": "com.example.ptune"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "189748391236-9rot5tpveidnpp716vrfqn9f5094teki.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.ptune",
+            "certificate_hash": "97995d46c06d7c897c25a37f5545ed2d08481290"
+          }
+        },
+        {
+          "client_id": "189748391236-r566e7h4skb4ok02sf992boel1dbcuf4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.ptune",
+            "certificate_hash": "035634ebdd04f486dec96342753d3491e364df42"
+          }
+        },
+        {
+          "client_id": "189748391236-pggorm266dnkorlqkk6djve97e8ii58o.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDsxw14aIUXu1yxMcyciTrujYc-M7JDjGk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "189748391236-pggorm266dnkorlqkk6djve97e8ii58o.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "189748391236-j42s9o1n94o40143mlrrapbe9uci3aru.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "net.getperf.ptune"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:189748391236:android:2be3f8bb5a48d2e682fb11",
+        "android_client_info": {
+          "package_name": "com.example.ptune_firebase_auth_test"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "189748391236-is8g679pnbpiochqui83ps93jfs2fvip.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.ptune_firebase_auth_test",
+            "certificate_hash": "97995d46c06d7c897c25a37f5545ed2d08481290"
+          }
+        },
+        {
+          "client_id": "189748391236-pggorm266dnkorlqkk6djve97e8ii58o.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDsxw14aIUXu1yxMcyciTrujYc-M7JDjGk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "189748391236-pggorm266dnkorlqkk6djve97e8ii58o.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "189748391236-j42s9o1n94o40143mlrrapbe9uci3aru.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "net.getperf.ptune"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:189748391236:android:2d76cca8d5d5830382fb11",
+        "android_client_info": {
+          "package_name": "net.getperf.ptune"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "189748391236-fj6pnoqn68od0g2f9f185mvsvggus0r8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "net.getperf.ptune",
+            "certificate_hash": "97995d46c06d7c897c25a37f5545ed2d08481290"
+          }
+        },
+        {
+          "client_id": "189748391236-ig3pkgr0dj5f1ul2ej00k1e101ku6n5e.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "net.getperf.ptune",
+            "certificate_hash": "035634ebdd04f486dec96342753d3491e364df42"
+          }
+        },
+        {
+          "client_id": "189748391236-pggorm266dnkorlqkk6djve97e8ii58o.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDsxw14aIUXu1yxMcyciTrujYc-M7JDjGk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "189748391236-pggorm266dnkorlqkk6djve97e8ii58o.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "189748391236-j42s9o1n94o40143mlrrapbe9uci3aru.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "net.getperf.ptune"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

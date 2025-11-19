@@ -1,0 +1,11 @@
+{
+  "demo-list-1": {
+    "id": "demo-list-1",
+    "title": "Today",
+    "description": "Default demo list"
+  },
+  "demo-list-2": {
+    "id": "demo-list-2",
+    "title": "Backlog"
+  }
+}
