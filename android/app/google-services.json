@@ -110,6 +110,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "189748391236-7qbtklar38hcpbk871l878b0rebadkug.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "net.getperf.ptune",
+            "certificate_hash": "454b03c8a4b5d29c0515f1097fb80fc6e3b6e1b9"
+          }
+        },
+        {
           "client_id": "189748391236-fj6pnoqn68od0g2f9f185mvsvggus0r8.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
