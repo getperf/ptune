@@ -89,30 +89,40 @@ class TimerController {
 
   Future<void> _commitIntermediateProgress() async {
     final summary = _session.getPartialSummary();
-    if (summary.isEmpty) {
-      logger.i("[TimerController] No differences, skipping apply");
-      return;
-    }
+    if (summary.isEmpty) return;
 
     logger.i("[TimerController] partial summary to apply: $summary");
-    final applier = ref.read(pomodoroSummaryApplierProvider);
-    await applier.apply(ref, summary);
 
-    final tasks = ref.read(tasksProvider).value ?? [];
-    await ref.read(tasksProvider.notifier).updateTasks(tasks);
+    final applier = ref.read(pomodoroSummaryApplierProvider);
+    final updatedTasks = await applier.apply(ref, summary);
+
+    // ここで保存(commit=true)
+    final notifier = ref.read(tasksProvider.notifier);
+    for (final t in updatedTasks) {
+      await notifier.updateTask(t, commit: true);
+    }
+
+    // selectedTimerTask の更新が必要な場合はここで行う
+    if (updatedTasks.isNotEmpty) {
+      ref.read(selectedTimerTaskProvider.notifier).state = updatedTasks.first;
+    }
   }
 
   /// セッション終了時の集計とリモート保存
   Future<void> _finalizeSessionAndApply({bool skipUpdateTasks = false}) async {
     final task = ref.read(selectedTimerTaskProvider);
     _session.record(phase: TimerPhase.end, taskId: task?.id);
+
     final summary = _session.getPartialSummary();
     final applier = ref.read(pomodoroSummaryApplierProvider);
-    await applier.apply(ref, summary);
+    final updatedTasks = await applier.apply(ref, summary);
 
+    // セッション終了でも updateTasks は使わない
     if (!skipUpdateTasks) {
-      final tasks = ref.read(tasksProvider).value ?? [];
-      await ref.read(tasksProvider.notifier).updateTasks(tasks);
+      final notifier = ref.read(tasksProvider.notifier);
+      for (final t in updatedTasks) {
+        await notifier.updateTask(t, commit: true);
+      }
     }
   }
 

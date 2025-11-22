@@ -1,24 +1,43 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ptune/models/my_task.dart';
 import 'package:ptune/models/pomodoro_info.dart';
 import 'package:ptune/providers/task_provider.dart';
 
+/// PomodoroSummaryApplier
+/// - partial summary から必要なタスクのみ更新し返す
+/// - updateTask の commit 有無は呼び出し元が制御
 class PomodoroSummaryApplier {
   PomodoroSummaryApplier();
 
-  Future<void> apply(Ref ref, Map<String, double> summary) async {
+  /// summary: { taskId: actual増分 }
+  /// 戻り値: 更新後の MyTask のリスト（部分更新対象のみ）
+  Future<List<MyTask>> apply(
+    Ref ref,
+    Map<String, double> summary,
+  ) async {
     final notifier = ref.read(tasksProvider.notifier);
-    for (final entry in summary.entries) {
-      final task = notifier.findById(entry.key);
-      if (task == null) continue;
-      final updated = task.copyWith(
-        pomodoro: task.pomodoro?.copyWith(
-              actual: (task.pomodoro?.actual ?? 0.0) + entry.value,
-            ) ??
-            PomodoroInfo(planned: 0, actual: entry.value.toDouble()),
-      );
+    final updatedTasks = <MyTask>[];
 
-      await notifier.updateTask(updated);
-      ref.read(selectedTimerTaskProvider.notifier).state = updated;
+    for (final entry in summary.entries) {
+      final taskId = entry.key;
+      final delta = entry.value;
+
+      final task = notifier.findById(taskId);
+      if (task == null) continue;
+
+      final newPomodoro = task.pomodoro?.copyWith(
+            actual: (task.pomodoro?.actual ?? 0.0) + delta,
+          ) ??
+          PomodoroInfo(planned: 0, actual: delta);
+
+      final updated = task.copyWith(pomodoro: newPomodoro);
+
+      // updateTask は commit=false で呼ぶ（保存は呼び出し元で制御）
+      await notifier.updateTask(updated, commit: false);
+
+      updatedTasks.add(updated);
     }
+
+    return updatedTasks;
   }
 }
