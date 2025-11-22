@@ -35,13 +35,14 @@ Future<void> initLogger() async {
 
   List<LogOutput> outputs = [ConsoleOutput()];
 
-  final dir = await getApplicationDocumentsDirectory();
+  final dir = await getApplicationSupportDirectory();
   final file = File('${dir.path}/app_log.txt');
   if (logToFile) {
     final sink = file.openWrite(mode: FileMode.append);
     outputs.add(FileLogOutput(sink));
+    await file.writeAsString("Log start at ${DateTime.now()}\n",
+        mode: FileMode.append);
   }
-
   logger = Logger(
     level: level,
     printer: PrettyPrinter(

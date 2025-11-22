@@ -37,13 +37,11 @@ class SettingsController {
   }
 
   Future<String> exportLogFile() async {
-    final file = await LogExporter.exportToDownload();
-    if (file == null) {
-      logger.w("[SettingsController] exportLogFile → no file found");
-      return "ログファイルが見つかりません。";
+    final ok = await LogExporter.shareLog();
+    if (!ok) {
+      return "ログ共有に失敗しました。";
     }
-    logger.i("[SettingsController] exportLogFile → ${file.path}");
-    return "ログを保存しました: ${file.path}";
+    return "ログ共有完了";
   }
 
   Future<String> deleteLogFile() async {

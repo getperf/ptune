@@ -34,9 +34,6 @@ class CommonTaskService implements TaskServiceInterface {
 
   @override
   Future<List<MyTask>> fetchTasks() async {
-    // final localTasks = await local.fetchTasks();
-    // if (localTasks.isNotEmpty) return localTasks;
-
     if (!_nextFetchForceRemote) {
       final localTasks = await local.fetchTasks();
       if (localTasks.isNotEmpty) return localTasks;
@@ -56,10 +53,31 @@ class CommonTaskService implements TaskServiceInterface {
 
   @override
   Future<void> saveTasks(List<MyTask> tasks) async {
+    // 1. まずはローカルに全件保存（従来通り）
     await local.saveTasks(tasks);
-    unawaited(remote.saveTasks(tasks).catchError((e) {
+    logger.i('[CommonTaskService] local saveTasks: ${tasks.length} tasks');
+
+    // 2. リモートに送る対象を絞り込む
+    //    - 完了タスクは Google Tasks 側で更新制限に引っかかりやすいので除外
+    final List<MyTask> remoteTargets =
+        tasks.where((t) => t.status != 'completed').toList(growable: false);
+
+    if (remoteTargets.isEmpty) {
+      logger.i(
+        '[CommonTaskService] skip remote saveTasks: no updatable tasks (all completed)',
+      );
+      return;
+    }
+
+    logger.i(
+      '[CommonTaskService] remote saveTasks: '
+      '${remoteTargets.length}/${tasks.length} tasks (skip completed)',
+    );
+
+    // 3. リモートは非同期実行（従来通り）＋失敗時は unsynced に記録
+    unawaited(remote.saveTasks(remoteTargets).catchError((e) {
       logger.w('[CommonTaskService] remote saveTasks failed: $e');
-      for (final task in tasks) {
+      for (final task in remoteTargets) {
         unsyncedLog.markUnsynced(task.id);
       }
     }));
@@ -68,6 +86,8 @@ class CommonTaskService implements TaskServiceInterface {
   @override
   Future<void> saveTask(MyTask task) async {
     await local.saveTask(task);
+    logger.i('[CommonTaskService] local saveTask: ${task.id}');
+
     unawaited(remote.saveTask(task).catchError((e) {
       logger.w('[CommonTaskService] remote saveTask failed: $e');
       unsyncedLog.markUnsynced(task.id);
@@ -94,6 +114,8 @@ class CommonTaskService implements TaskServiceInterface {
   @override
   Future<void> deleteTask(String id) async {
     await local.deleteTask(id);
+    logger.i('[CommonTaskService] local deleteTask: $id');
+
     unawaited(remote.deleteTask(id).catchError((e) {
       logger.w('[CommonTaskService] remote deleteTask failed: $e');
       unsyncedLog.markUnsynced(id);

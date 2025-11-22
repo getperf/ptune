@@ -20,7 +20,6 @@ class LocalTaskService implements TaskServiceInterface {
   Future<void> _ensureInitialized() async {
     if (_loaded) return;
 
-    // final dir = await getApplicationDocumentsDirectory();
     final dir = await getApplicationSupportDirectory();
     _file = File('${dir.path}/tasks.json');
 

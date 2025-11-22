@@ -51,7 +51,7 @@ class TasksNotifier extends StateNotifier<AsyncValue<List<MyTask>>> {
     try {
       final tasks = await taskService.fetchTasks();
       state = AsyncValue.data(tasks);
-      logger.i("[TaskListNotifier] loaded ${tasks.length} tasks");
+      logger.i("[TasksNotifier] loaded ${tasks.length} tasks");
     } on ApiException catch (e, st) {
       // ApiExceptionはAsyncErrorに流す
       state = AsyncValue.error(e, st);
@@ -71,7 +71,7 @@ class TasksNotifier extends StateNotifier<AsyncValue<List<MyTask>>> {
       await taskService.saveTask(updated);
     }
     logger.d(
-        "[TaskListNotifier] updateTask: ${updated.id} → ${updated.title}, commit=$commit");
+        "[TasksNotifier] updateTask: ${updated.id} → ${updated.title}, commit=$commit");
   }
 
   Future<void> updateTasks(List<MyTask> tasks) async {
@@ -92,8 +92,7 @@ class TasksNotifier extends StateNotifier<AsyncValue<List<MyTask>>> {
   MyTask? findById(String id) {
     final current = state.value ?? [];
     final task = TaskCollection(current).findById(id);
-    logger
-        .d("[TaskListNotifier] findById: $id → ${task?.title ?? 'not found'}");
+    logger.d("[TasksNotifier] findById: $id → ${task?.title ?? 'not found'}");
     return task;
   }
 
@@ -107,7 +106,7 @@ class TasksNotifier extends StateNotifier<AsyncValue<List<MyTask>>> {
         ? task.copyWith(status: "needsAction", completed: null)
         : task.markCompleted();
 
-    logger.i("[TaskListNotifier] toggleComplete: $id → ${updated.status}");
+    logger.i("[TasksNotifier] toggleComplete: $id → ${updated.status}");
 
     final updatedList = [...current];
     updatedList[index] = updated;

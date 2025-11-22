@@ -73,7 +73,7 @@ class DemoTaskService implements TaskServiceInterface {
   }
 
   Future<void> _saveToFile() async {
-    final dir = await getApplicationDocumentsDirectory();
+    final dir = await getApplicationSupportDirectory();
     final file = File('${dir.path}/tasks_demo.json');
 
     final Map<String, dynamic> jsonMap = {
