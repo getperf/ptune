@@ -5,3 +5,6 @@
 
 # Linux host files
 linux/** text eol=lf
+
+# Windows host files
+windows/** text eol=lf
