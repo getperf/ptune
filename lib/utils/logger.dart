@@ -1,17 +1,12 @@
 import 'dart:io';
-
+import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:ptune/utils/env_config.dart';
-import 'package:ptune/utils/file_log_output.dart';
 
 late Logger logger;
 
-final String logLevelString = const String.fromEnvironment(
-  'LOG_LEVEL',
-  defaultValue: 'debug',
-);
-
+/// LOG_LEVEL を Level に変換
 Level _getLogLevel(String level) {
   switch (level.toLowerCase()) {
     case 'debug':
@@ -23,39 +18,75 @@ Level _getLogLevel(String level) {
     case 'error':
       return Level.error;
     default:
-      return Level.debug; // 既定値
+      return Level.debug;
+  }
+}
+
+class PtuneLogger extends Logger {
+  final File file;
+
+  final Level minLevel;
+
+  PtuneLogger({
+    required this.file,
+    required this.minLevel,
+  }) : super(
+          level: minLevel,
+          printer: SimplePrinter(),
+          output: null,
+        );
+
+  @override
+  void log(
+    Level level,
+    dynamic message, {
+    DateTime? time,
+    Object? error,
+    StackTrace? stackTrace,
+  }) {
+    if (level.index < minLevel.index) {
+      return; // debug を抑制（info 以上のみなど）
+    }
+
+    final ts = time ?? DateTime.now();
+    final logLine = "[${ts.toIso8601String()}][$level] $message";
+
+    // ★ release ビルドでも 100% 残る同期書き込み
+    try {
+      final sink = file.openSync(mode: FileMode.append);
+      sink.writeStringSync("$logLine\n");
+      sink.flushSync();
+      sink.closeSync();
+    } catch (_) {}
+
+    // debug モードのみ従来の logger 処理も実行
+    if (!kReleaseMode) {
+      super.log(
+        level,
+        message,
+        time: ts,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
   }
 }
 
 Future<void> initLogger() async {
-  final logLevelString = EnvConfig.logLevel;
-  final logToFile = EnvConfig.logToFile;
-
-  final level = _getLogLevel(logLevelString);
-
-  List<LogOutput> outputs = [ConsoleOutput()];
+  final logLevel = _getLogLevel(EnvConfig.logLevel);
 
   final dir = await getApplicationSupportDirectory();
   final file = File('${dir.path}/app_log.txt');
-  if (logToFile) {
-    final sink = file.openWrite(mode: FileMode.append);
-    outputs.add(FileLogOutput(sink));
-    await file.writeAsString("Log start at ${DateTime.now()}\n",
-        mode: FileMode.append);
-  }
-  logger = Logger(
-    level: level,
-    printer: PrettyPrinter(
-      methodCount: 0,
-      errorMethodCount: 0,
-      lineLength: 80,
-      noBoxingByDefault: true,
-      dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
-    ),
-    output: MultiOutput(outputs),
+
+  file.writeAsStringSync(
+    "Log start at ${DateTime.now()}\n",
+    mode: FileMode.append,
   );
 
-  final filePath = logToFile ? file.path : 'none';
-  logger.i(
-      "[Logger] Initialized with level: $logLevelString, file logging: $filePath");
+  logger = PtuneLogger(
+    file: file,
+    minLevel: logLevel, // ★ LOG_LEVEL に基づく
+  );
+
+  logger.i("PtuneLogger initialized (LOG_LEVEL=${EnvConfig.logLevel})");
 }

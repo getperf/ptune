@@ -12,7 +12,7 @@ flutter_icons:
   adaptive_icon_background: "assets/icon/icon_adaptive_background.png"
   adaptive_icon_foreground: "assets/icon/icon_adaptive_foreground.png"
 
-version: 1.0.0+3
+version: 1.0.0+4
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
