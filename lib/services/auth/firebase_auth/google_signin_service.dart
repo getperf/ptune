@@ -8,6 +8,7 @@ class GoogleSignInService {
   final GoogleSignIn _googleSignIn;
   final List<String> _scopes;
   GoogleSignInAccount? _account;
+  bool _inProgress = false;
 
   GoogleSignInService()
       : _googleSignIn = GoogleSignIn.instance,
@@ -16,15 +17,50 @@ class GoogleSignInService {
             : EnvConfig.scopes;
 
   Future<void> initialize() async {
-    final clientId = EnvConfig.getClientId();
-    if (clientId.isEmpty) {
+    final platform = Platform.operatingSystem;
+
+    // ============================
+    // Firebase モード
+    // ============================
+    if (EnvConfig.authProvider == 'firebase') {
+      // --- Android: google-services.json に完全委任 ---
+      if (platform == 'android') {
+        logger.i('[GoogleSignInService] Firebase(Android) auto config');
+        await _googleSignIn.initialize();
+
+        // 既存セッションの軽復元
+        await _tryLightweightRestore();
+        return;
+      }
+
+      // --- iOS: Firebase client_id を指定 ---
+      final clientId = EnvConfig.getClientId();
+      if (clientId.isEmpty) {
+        throw Exception('FIREBASE_CLIENT_ID_IOS is not set');
+      }
+
+      logger.i('[GoogleSignInService] Firebase(iOS) using $clientId');
+      await _googleSignIn.initialize(serverClientId: clientId);
+
+      await _tryLightweightRestore();
+      return;
+    }
+
+    // ============================
+    // Google OAuth（非 Firebase）
+    // ============================
+    final webClientId = EnvConfig.getClientId();
+    if (webClientId.isEmpty) {
       throw Exception('GOOGLE_CLIENT_ID is not set');
     }
-    logger.d(
-        '[GoogleSignInService] Initializing with $clientId(platform=${Platform.operatingSystem})');
-    await _googleSignIn.initialize(serverClientId: clientId);
 
-    // 軽復元を試みる（引数なし）
+    logger.i('[GoogleSignInService] Google OAuth using $webClientId');
+    await _googleSignIn.initialize(serverClientId: webClientId);
+
+    await _tryLightweightRestore();
+  }
+
+  Future<void> _tryLightweightRestore() async {
     try {
       _account = await _googleSignIn.attemptLightweightAuthentication();
       if (_account != null) {
@@ -51,13 +87,22 @@ class GoogleSignInService {
 
   Future<GoogleSignInAccount?> signInIfNeeded() async {
     if (_account != null) return _account;
-
-    logger.i('[GoogleSignInService] Authenticating user...');
-    _account = await _googleSignIn.authenticate(scopeHint: _scopes);
-    if (_account == null) {
-      throw Exception('Google アカウント認証に失敗しました');
+    if (_inProgress) {
+      logger.w('[GoogleSignInService] signIn skipped: already in progress');
+      return null;
     }
-    return _account;
+
+    _inProgress = true;
+    try {
+      logger.i('[GoogleSignInService] Authenticating user...');
+      _account = await _googleSignIn.authenticate(scopeHint: _scopes);
+      if (_account == null) {
+        throw Exception('Google アカウント認証に失敗しました');
+      }
+      return _account;
+    } finally {
+      _inProgress = false;
+    }
   }
 
   Future<String> getAccessToken({bool forceRefresh = false}) async {

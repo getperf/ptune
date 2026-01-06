@@ -30,6 +30,14 @@
           }
         },
         {
+          "client_id": "189748391236-fo8g8i788ag2hlt6ss1s1j4jqg38jp8k.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "net.getperf.ptune",
+            "certificate_hash": "1f581297c3c7e66fe76026ba37d69e17c744e955"
+          }
+        },
+        {
           "client_id": "189748391236-ig3pkgr0dj5f1ul2ej00k1e101ku6n5e.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
