@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import 'package:ptune/controllers/auth_controller_provider.dart';
 import 'package:ptune/providers/auth_state_provider.dart';
 import 'package:ptune/utils/logger.dart';
+
+/// 自動サインインを 1 回に制御するためのフラグ
+final _autoSignInStartedProvider = StateProvider<bool>((ref) => false);
 
 class AuthView extends ConsumerWidget {
   const AuthView({super.key});
@@ -12,18 +16,26 @@ class AuthView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final status = ref.watch(authStateProvider);
     final uri = GoRouterState.of(context).uri;
+
     final mode = uri.queryParameters['mode'] ?? 'default';
     final returnTo = uri.queryParameters['returnTo'] ?? '/home';
 
     final controller = ref.read(authControllerProvider);
+    final autoStarted = ref.watch(_autoSignInStartedProvider);
 
-    /// ✅ 初回自動実行: 未認証で busy でない場合、認証を試行
+    /// --- 初回だけ自動サインイン ---
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (status == AuthStatus.unauthenticated && mode != 'signin') {
+      if (!autoStarted &&
+          status == AuthStatus.unauthenticated &&
+          mode != 'signin') {
+        // 先にフラグを立てる（再ビルドで再実行されないように）
+        ref.read(_autoSignInStartedProvider.notifier).state = true;
+
         logger.i('[AuthView] auto sign-in triggered');
         await controller.signIn(context, returnTo: returnTo);
       }
     });
+
     final isBusy = status == AuthStatus.authenticating;
     final isAuthed = status == AuthStatus.authenticated;
     final title = '認証: ${isBusy ? '処理中' : status.label}';
@@ -93,14 +105,6 @@ class AuthView extends ConsumerWidget {
                       },
                 child: const Text('再認証'),
               ),
-              // const SizedBox(height: 12),
-              // OutlinedButton(
-              //   onPressed: () {
-              //     logger.i('[AuthView] Back button pressed');
-              //     context.go(returnTo);
-              //   },
-              //   child: const Text('Back'),
-              // ),
             ],
           ],
         ),

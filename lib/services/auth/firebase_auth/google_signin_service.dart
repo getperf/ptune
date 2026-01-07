@@ -86,6 +86,9 @@ class GoogleSignInService {
   }
 
   Future<GoogleSignInAccount?> signInIfNeeded() async {
+    logger.d(
+        '[GoogleSignInService] called start (inProgress=$_inProgress, hasAccount=${_account != null})');
+
     if (_account != null) return _account;
     if (_inProgress) {
       logger.w('[GoogleSignInService] signIn skipped: already in progress');
