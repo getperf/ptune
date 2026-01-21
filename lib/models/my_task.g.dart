@@ -21,7 +21,7 @@ _MyTask _$MyTaskFromJson(Map<String, dynamic> json) => _MyTask(
       (json['subTasks'] as List<dynamic>?)
           ?.map((e) => MyTask.fromJson(e as Map<String, dynamic>))
           .toList() ??
-      const [],
+      const <MyTask>[],
   due: json['due'] == null ? null : DateTime.parse(json['due'] as String),
   started: json['started'] == null
       ? null
@@ -33,6 +33,11 @@ _MyTask _$MyTaskFromJson(Map<String, dynamic> json) => _MyTask(
       ? null
       : DateTime.parse(json['updated'] as String),
   deleted: json['deleted'] as bool? ?? false,
+  reviewFlags:
+      (json['reviewFlags'] as List<dynamic>?)
+          ?.map((e) => $enumDecode(_$ReviewFlagEnumMap, e))
+          .toList() ??
+      const <ReviewFlag>[],
 );
 
 Map<String, dynamic> _$MyTaskToJson(_MyTask instance) => <String, dynamic>{
@@ -50,4 +55,16 @@ Map<String, dynamic> _$MyTaskToJson(_MyTask instance) => <String, dynamic>{
   'completed': instance.completed?.toIso8601String(),
   'updated': instance.updated?.toIso8601String(),
   'deleted': instance.deleted,
+  'reviewFlags': instance.reviewFlags
+      .map((e) => _$ReviewFlagEnumMap[e]!)
+      .toList(),
+};
+
+const _$ReviewFlagEnumMap = {
+  ReviewFlag.stuckUnknown: 'stuckUnknown',
+  ReviewFlag.toolOrEnvIssue: 'toolOrEnvIssue',
+  ReviewFlag.decisionPending: 'decisionPending',
+  ReviewFlag.scopeExpanded: 'scopeExpanded',
+  ReviewFlag.unresolved: 'unresolved',
+  ReviewFlag.newIssueFound: 'newIssueFound',
 };

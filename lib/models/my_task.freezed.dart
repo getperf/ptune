@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$MyTask {
 
- String get id; String get title; String? get tasklistId; String? get note; String? get parent; String? get position; PomodoroInfo? get pomodoro; String get status; List<MyTask> get subTasks; DateTime? get due; DateTime? get started; DateTime? get completed; DateTime? get updated; bool get deleted;
+ String get id; String get title; String? get tasklistId; String? get note; String? get parent; String? get position; PomodoroInfo? get pomodoro; String get status; List<MyTask> get subTasks; DateTime? get due; DateTime? get started; DateTime? get completed; DateTime? get updated; bool get deleted; List<ReviewFlag> get reviewFlags;
 /// Create a copy of MyTask
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $MyTaskCopyWith<MyTask> get copyWith => _$MyTaskCopyWithImpl<MyTask>(this as MyT
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is MyTask&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.tasklistId, tasklistId) || other.tasklistId == tasklistId)&&(identical(other.note, note) || other.note == note)&&(identical(other.parent, parent) || other.parent == parent)&&(identical(other.position, position) || other.position == position)&&(identical(other.pomodoro, pomodoro) || other.pomodoro == pomodoro)&&(identical(other.status, status) || other.status == status)&&const DeepCollectionEquality().equals(other.subTasks, subTasks)&&(identical(other.due, due) || other.due == due)&&(identical(other.started, started) || other.started == started)&&(identical(other.completed, completed) || other.completed == completed)&&(identical(other.updated, updated) || other.updated == updated)&&(identical(other.deleted, deleted) || other.deleted == deleted));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is MyTask&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.tasklistId, tasklistId) || other.tasklistId == tasklistId)&&(identical(other.note, note) || other.note == note)&&(identical(other.parent, parent) || other.parent == parent)&&(identical(other.position, position) || other.position == position)&&(identical(other.pomodoro, pomodoro) || other.pomodoro == pomodoro)&&(identical(other.status, status) || other.status == status)&&const DeepCollectionEquality().equals(other.subTasks, subTasks)&&(identical(other.due, due) || other.due == due)&&(identical(other.started, started) || other.started == started)&&(identical(other.completed, completed) || other.completed == completed)&&(identical(other.updated, updated) || other.updated == updated)&&(identical(other.deleted, deleted) || other.deleted == deleted)&&const DeepCollectionEquality().equals(other.reviewFlags, reviewFlags));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,title,tasklistId,note,parent,position,pomodoro,status,const DeepCollectionEquality().hash(subTasks),due,started,completed,updated,deleted);
+int get hashCode => Object.hash(runtimeType,id,title,tasklistId,note,parent,position,pomodoro,status,const DeepCollectionEquality().hash(subTasks),due,started,completed,updated,deleted,const DeepCollectionEquality().hash(reviewFlags));
 
 @override
 String toString() {
-  return 'MyTask(id: $id, title: $title, tasklistId: $tasklistId, note: $note, parent: $parent, position: $position, pomodoro: $pomodoro, status: $status, subTasks: $subTasks, due: $due, started: $started, completed: $completed, updated: $updated, deleted: $deleted)';
+  return 'MyTask(id: $id, title: $title, tasklistId: $tasklistId, note: $note, parent: $parent, position: $position, pomodoro: $pomodoro, status: $status, subTasks: $subTasks, due: $due, started: $started, completed: $completed, updated: $updated, deleted: $deleted, reviewFlags: $reviewFlags)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $MyTaskCopyWith<$Res>  {
   factory $MyTaskCopyWith(MyTask value, $Res Function(MyTask) _then) = _$MyTaskCopyWithImpl;
 @useResult
 $Res call({
- String id, String title, String? tasklistId, String? note, String? parent, String? position, PomodoroInfo? pomodoro, String status, List<MyTask> subTasks, DateTime? due, DateTime? started, DateTime? completed, DateTime? updated, bool deleted
+ String id, String title, String? tasklistId, String? note, String? parent, String? position, PomodoroInfo? pomodoro, String status, List<MyTask> subTasks, DateTime? due, DateTime? started, DateTime? completed, DateTime? updated, bool deleted, List<ReviewFlag> reviewFlags
 });
 
 
@@ -65,7 +65,7 @@ class _$MyTaskCopyWithImpl<$Res>
 
 /// Create a copy of MyTask
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? tasklistId = freezed,Object? note = freezed,Object? parent = freezed,Object? position = freezed,Object? pomodoro = freezed,Object? status = null,Object? subTasks = null,Object? due = freezed,Object? started = freezed,Object? completed = freezed,Object? updated = freezed,Object? deleted = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? tasklistId = freezed,Object? note = freezed,Object? parent = freezed,Object? position = freezed,Object? pomodoro = freezed,Object? status = null,Object? subTasks = null,Object? due = freezed,Object? started = freezed,Object? completed = freezed,Object? updated = freezed,Object? deleted = null,Object? reviewFlags = null,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -81,7 +81,8 @@ as DateTime?,started: freezed == started ? _self.started : started // ignore: ca
 as DateTime?,completed: freezed == completed ? _self.completed : completed // ignore: cast_nullable_to_non_nullable
 as DateTime?,updated: freezed == updated ? _self.updated : updated // ignore: cast_nullable_to_non_nullable
 as DateTime?,deleted: null == deleted ? _self.deleted : deleted // ignore: cast_nullable_to_non_nullable
-as bool,
+as bool,reviewFlags: null == reviewFlags ? _self.reviewFlags : reviewFlags // ignore: cast_nullable_to_non_nullable
+as List<ReviewFlag>,
   ));
 }
 /// Create a copy of MyTask
@@ -178,10 +179,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title,  String? tasklistId,  String? note,  String? parent,  String? position,  PomodoroInfo? pomodoro,  String status,  List<MyTask> subTasks,  DateTime? due,  DateTime? started,  DateTime? completed,  DateTime? updated,  bool deleted)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title,  String? tasklistId,  String? note,  String? parent,  String? position,  PomodoroInfo? pomodoro,  String status,  List<MyTask> subTasks,  DateTime? due,  DateTime? started,  DateTime? completed,  DateTime? updated,  bool deleted,  List<ReviewFlag> reviewFlags)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MyTask() when $default != null:
-return $default(_that.id,_that.title,_that.tasklistId,_that.note,_that.parent,_that.position,_that.pomodoro,_that.status,_that.subTasks,_that.due,_that.started,_that.completed,_that.updated,_that.deleted);case _:
+return $default(_that.id,_that.title,_that.tasklistId,_that.note,_that.parent,_that.position,_that.pomodoro,_that.status,_that.subTasks,_that.due,_that.started,_that.completed,_that.updated,_that.deleted,_that.reviewFlags);case _:
   return orElse();
 
 }
@@ -199,10 +200,10 @@ return $default(_that.id,_that.title,_that.tasklistId,_that.note,_that.parent,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title,  String? tasklistId,  String? note,  String? parent,  String? position,  PomodoroInfo? pomodoro,  String status,  List<MyTask> subTasks,  DateTime? due,  DateTime? started,  DateTime? completed,  DateTime? updated,  bool deleted)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title,  String? tasklistId,  String? note,  String? parent,  String? position,  PomodoroInfo? pomodoro,  String status,  List<MyTask> subTasks,  DateTime? due,  DateTime? started,  DateTime? completed,  DateTime? updated,  bool deleted,  List<ReviewFlag> reviewFlags)  $default,) {final _that = this;
 switch (_that) {
 case _MyTask():
-return $default(_that.id,_that.title,_that.tasklistId,_that.note,_that.parent,_that.position,_that.pomodoro,_that.status,_that.subTasks,_that.due,_that.started,_that.completed,_that.updated,_that.deleted);case _:
+return $default(_that.id,_that.title,_that.tasklistId,_that.note,_that.parent,_that.position,_that.pomodoro,_that.status,_that.subTasks,_that.due,_that.started,_that.completed,_that.updated,_that.deleted,_that.reviewFlags);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -219,10 +220,10 @@ return $default(_that.id,_that.title,_that.tasklistId,_that.note,_that.parent,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title,  String? tasklistId,  String? note,  String? parent,  String? position,  PomodoroInfo? pomodoro,  String status,  List<MyTask> subTasks,  DateTime? due,  DateTime? started,  DateTime? completed,  DateTime? updated,  bool deleted)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title,  String? tasklistId,  String? note,  String? parent,  String? position,  PomodoroInfo? pomodoro,  String status,  List<MyTask> subTasks,  DateTime? due,  DateTime? started,  DateTime? completed,  DateTime? updated,  bool deleted,  List<ReviewFlag> reviewFlags)?  $default,) {final _that = this;
 switch (_that) {
 case _MyTask() when $default != null:
-return $default(_that.id,_that.title,_that.tasklistId,_that.note,_that.parent,_that.position,_that.pomodoro,_that.status,_that.subTasks,_that.due,_that.started,_that.completed,_that.updated,_that.deleted);case _:
+return $default(_that.id,_that.title,_that.tasklistId,_that.note,_that.parent,_that.position,_that.pomodoro,_that.status,_that.subTasks,_that.due,_that.started,_that.completed,_that.updated,_that.deleted,_that.reviewFlags);case _:
   return null;
 
 }
@@ -234,7 +235,7 @@ return $default(_that.id,_that.title,_that.tasklistId,_that.note,_that.parent,_t
 @JsonSerializable()
 
 class _MyTask implements MyTask {
-  const _MyTask({required this.id, required this.title, this.tasklistId, this.note, this.parent, this.position, this.pomodoro, this.status = "needsAction", final  List<MyTask> subTasks = const [], this.due, this.started, this.completed, this.updated, this.deleted = false}): _subTasks = subTasks;
+  const _MyTask({required this.id, required this.title, this.tasklistId, this.note, this.parent, this.position, this.pomodoro, this.status = "needsAction", final  List<MyTask> subTasks = const <MyTask>[], this.due, this.started, this.completed, this.updated, this.deleted = false, final  List<ReviewFlag> reviewFlags = const <ReviewFlag>[]}): _subTasks = subTasks,_reviewFlags = reviewFlags;
   factory _MyTask.fromJson(Map<String, dynamic> json) => _$MyTaskFromJson(json);
 
 @override final  String id;
@@ -257,6 +258,13 @@ class _MyTask implements MyTask {
 @override final  DateTime? completed;
 @override final  DateTime? updated;
 @override@JsonKey() final  bool deleted;
+ final  List<ReviewFlag> _reviewFlags;
+@override@JsonKey() List<ReviewFlag> get reviewFlags {
+  if (_reviewFlags is EqualUnmodifiableListView) return _reviewFlags;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_reviewFlags);
+}
+
 
 /// Create a copy of MyTask
 /// with the given fields replaced by the non-null parameter values.
@@ -271,16 +279,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MyTask&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.tasklistId, tasklistId) || other.tasklistId == tasklistId)&&(identical(other.note, note) || other.note == note)&&(identical(other.parent, parent) || other.parent == parent)&&(identical(other.position, position) || other.position == position)&&(identical(other.pomodoro, pomodoro) || other.pomodoro == pomodoro)&&(identical(other.status, status) || other.status == status)&&const DeepCollectionEquality().equals(other._subTasks, _subTasks)&&(identical(other.due, due) || other.due == due)&&(identical(other.started, started) || other.started == started)&&(identical(other.completed, completed) || other.completed == completed)&&(identical(other.updated, updated) || other.updated == updated)&&(identical(other.deleted, deleted) || other.deleted == deleted));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _MyTask&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.tasklistId, tasklistId) || other.tasklistId == tasklistId)&&(identical(other.note, note) || other.note == note)&&(identical(other.parent, parent) || other.parent == parent)&&(identical(other.position, position) || other.position == position)&&(identical(other.pomodoro, pomodoro) || other.pomodoro == pomodoro)&&(identical(other.status, status) || other.status == status)&&const DeepCollectionEquality().equals(other._subTasks, _subTasks)&&(identical(other.due, due) || other.due == due)&&(identical(other.started, started) || other.started == started)&&(identical(other.completed, completed) || other.completed == completed)&&(identical(other.updated, updated) || other.updated == updated)&&(identical(other.deleted, deleted) || other.deleted == deleted)&&const DeepCollectionEquality().equals(other._reviewFlags, _reviewFlags));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,title,tasklistId,note,parent,position,pomodoro,status,const DeepCollectionEquality().hash(_subTasks),due,started,completed,updated,deleted);
+int get hashCode => Object.hash(runtimeType,id,title,tasklistId,note,parent,position,pomodoro,status,const DeepCollectionEquality().hash(_subTasks),due,started,completed,updated,deleted,const DeepCollectionEquality().hash(_reviewFlags));
 
 @override
 String toString() {
-  return 'MyTask(id: $id, title: $title, tasklistId: $tasklistId, note: $note, parent: $parent, position: $position, pomodoro: $pomodoro, status: $status, subTasks: $subTasks, due: $due, started: $started, completed: $completed, updated: $updated, deleted: $deleted)';
+  return 'MyTask(id: $id, title: $title, tasklistId: $tasklistId, note: $note, parent: $parent, position: $position, pomodoro: $pomodoro, status: $status, subTasks: $subTasks, due: $due, started: $started, completed: $completed, updated: $updated, deleted: $deleted, reviewFlags: $reviewFlags)';
 }
 
 
@@ -291,7 +299,7 @@ abstract mixin class _$MyTaskCopyWith<$Res> implements $MyTaskCopyWith<$Res> {
   factory _$MyTaskCopyWith(_MyTask value, $Res Function(_MyTask) _then) = __$MyTaskCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String title, String? tasklistId, String? note, String? parent, String? position, PomodoroInfo? pomodoro, String status, List<MyTask> subTasks, DateTime? due, DateTime? started, DateTime? completed, DateTime? updated, bool deleted
+ String id, String title, String? tasklistId, String? note, String? parent, String? position, PomodoroInfo? pomodoro, String status, List<MyTask> subTasks, DateTime? due, DateTime? started, DateTime? completed, DateTime? updated, bool deleted, List<ReviewFlag> reviewFlags
 });
 
 
@@ -308,7 +316,7 @@ class __$MyTaskCopyWithImpl<$Res>
 
 /// Create a copy of MyTask
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = null,Object? tasklistId = freezed,Object? note = freezed,Object? parent = freezed,Object? position = freezed,Object? pomodoro = freezed,Object? status = null,Object? subTasks = null,Object? due = freezed,Object? started = freezed,Object? completed = freezed,Object? updated = freezed,Object? deleted = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = null,Object? tasklistId = freezed,Object? note = freezed,Object? parent = freezed,Object? position = freezed,Object? pomodoro = freezed,Object? status = null,Object? subTasks = null,Object? due = freezed,Object? started = freezed,Object? completed = freezed,Object? updated = freezed,Object? deleted = null,Object? reviewFlags = null,}) {
   return _then(_MyTask(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
@@ -324,7 +332,8 @@ as DateTime?,started: freezed == started ? _self.started : started // ignore: ca
 as DateTime?,completed: freezed == completed ? _self.completed : completed // ignore: cast_nullable_to_non_nullable
 as DateTime?,updated: freezed == updated ? _self.updated : updated // ignore: cast_nullable_to_non_nullable
 as DateTime?,deleted: null == deleted ? _self.deleted : deleted // ignore: cast_nullable_to_non_nullable
-as bool,
+as bool,reviewFlags: null == reviewFlags ? _self._reviewFlags : reviewFlags // ignore: cast_nullable_to_non_nullable
+as List<ReviewFlag>,
   ));
 }
 

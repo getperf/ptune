@@ -1,6 +1,7 @@
 // lib/models/my_task.dart
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'pomodoro_info.dart';
+import 'review_flag.dart';
 
 part 'my_task.freezed.dart';
 part 'my_task.g.dart';
@@ -16,12 +17,13 @@ abstract class MyTask with _$MyTask {
     String? position,
     PomodoroInfo? pomodoro,
     @Default("needsAction") String status,
-    @Default([]) List<MyTask> subTasks,
+    @Default(<MyTask>[]) List<MyTask> subTasks,
     DateTime? due,
     DateTime? started,
     DateTime? completed,
     DateTime? updated,
     @Default(false) bool deleted,
+    @Default(<ReviewFlag>[]) List<ReviewFlag> reviewFlags,
   }) = _MyTask;
 
   factory MyTask.fromJson(Map<String, dynamic> json) => _$MyTaskFromJson(json);
