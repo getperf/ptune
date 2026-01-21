@@ -6,7 +6,7 @@ part 'my_task.freezed.dart';
 part 'my_task.g.dart';
 
 @freezed
-class MyTask with _$MyTask {
+abstract class MyTask with _$MyTask {
   const factory MyTask({
     required String id,
     required String title,

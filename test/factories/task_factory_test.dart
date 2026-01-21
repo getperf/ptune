@@ -3,8 +3,13 @@ import 'package:ptune/factories/task_factory.dart';
 import 'package:ptune/factories/task_factory_ext.dart';
 import 'package:ptune/models/my_task.dart';
 import 'package:ptune/models/pomodoro_info.dart';
+import 'package:ptune/utils/logger.dart';
 
 void main() {
+  setUpAll(() {
+    initLoggerForTest();
+  });
+
   test('fromApiData should parse notes and pomodoro correctly', () {
     final factory = TaskFactory();
     final task = factory.fromApiData({

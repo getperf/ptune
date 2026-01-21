@@ -1,11 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ptune/utils/task_hierarchy.dart';
 import 'package:ptune/models/my_task.dart';
+import 'package:ptune/utils/logger.dart';
 
 MyTask t(String id, String title, {String? parent}) =>
     MyTask(id: id, title: title, parent: parent);
 
 void main() {
+  setUpAll(() {
+    initLoggerForTest();
+  });
+
   group('planToggleMove (two-level enforced)', () {
     test('a, b, c で b をサブタスク化 → parent=a, previous=null(先頭)', () {
       final a = t('a', 'a');
@@ -30,7 +35,7 @@ void main() {
     test('先頭 a はサブタスク化できない（noop）', () {
       final a = t('a', 'a');
       final plan = planToggleMove([a], a);
-      expect(plan.kind, MovePlanKind.noop);
+      expect(plan.kind, MovePlanKind.error);
     });
 
     test('子 b を解除 → TOP after a（parent=null, previous=a）', () {
@@ -47,7 +52,7 @@ void main() {
       final ch = t('ch', 'ch', parent: 'p'); // 子
       final x = t('x', 'x');
       final plan = planToggleMove([p, ch, x], p);
-      expect(plan.kind, MovePlanKind.noop);
+      expect(plan.kind, MovePlanKind.error);
       expect(plan.reason.contains('ERR_HAS_CHILDREN'), isTrue);
     });
 

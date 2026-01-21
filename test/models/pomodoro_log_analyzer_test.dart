@@ -2,8 +2,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ptune/models/pomodoro_log.dart';
 import 'package:ptune/models/pomodoro_log_analyzer.dart';
 import 'package:ptune/models/timer_phase.dart';
+import 'package:ptune/utils/logger.dart';
 
 void main() {
+  setUpAll(() {
+    initLoggerForTest();
+  });
+
   group('PomodoroLogAnalyzer', () {
     test('summarize calculates total time per task', () {
       final logs = [

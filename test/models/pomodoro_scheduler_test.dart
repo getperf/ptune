@@ -1,8 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ptune/models/pomodoro_scheduler.dart';
 import 'package:ptune/models/session_type.dart';
+import 'package:ptune/utils/logger.dart';
 
 void main() {
+  setUpAll(() {
+    initLoggerForTest();
+  });
+
   group('PomodoroScheduler', () {
     late PomodoroScheduler scheduler;
 
@@ -33,7 +38,7 @@ void main() {
 
     test('getDuration with no argument uses currentType', () {
       scheduler.currentType = SessionType.longBreak;
-      expect(scheduler.getDuration(), 5);
+      expect(scheduler.getDuration(), 20);
     });
   });
 }

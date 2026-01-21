@@ -4,7 +4,7 @@ part 'my_task_list.freezed.dart';
 part 'my_task_list.g.dart';
 
 @freezed
-class MyTaskList with _$MyTaskList {
+abstract class MyTaskList with _$MyTaskList {
   const factory MyTaskList({
     required String id,
     required String title,

@@ -5,7 +5,7 @@ part 'pomodoro_info.freezed.dart';
 part 'pomodoro_info.g.dart'; // ← 追加
 
 @freezed
-class PomodoroInfo with _$PomodoroInfo {
+abstract class PomodoroInfo with _$PomodoroInfo {
   const factory PomodoroInfo({required int planned, double? actual}) =
       _PomodoroInfo;
 

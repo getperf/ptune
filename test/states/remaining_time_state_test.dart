@@ -1,7 +1,18 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ptune/states/remaining_time_state.dart';
+import 'package:ptune/utils/logger.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() async {
+    initLoggerForTest();
+
+    // ★ shared_preferences をテスト用メモリ実装に切り替え
+    SharedPreferences.setMockInitialValues({});
+  });
+
   group('RemainingTimeState', () {
     late RemainingTimeState state;
 

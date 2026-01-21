@@ -27,14 +27,8 @@ class PtuneLogger extends Logger {
 
   final Level minLevel;
 
-  PtuneLogger({
-    required this.file,
-    required this.minLevel,
-  }) : super(
-          level: minLevel,
-          printer: SimplePrinter(),
-          output: null,
-        );
+  PtuneLogger({required this.file, required this.minLevel})
+    : super(level: minLevel, printer: SimplePrinter(), output: null);
 
   @override
   void log(
@@ -61,13 +55,7 @@ class PtuneLogger extends Logger {
 
     // debug モードのみ従来の logger 処理も実行
     if (!kReleaseMode) {
-      super.log(
-        level,
-        message,
-        time: ts,
-        error: error,
-        stackTrace: stackTrace,
-      );
+      super.log(level, message, time: ts, error: error, stackTrace: stackTrace);
     }
   }
 }
@@ -89,4 +77,11 @@ Future<void> initLogger() async {
   );
 
   logger.i("PtuneLogger initialized (LOG_LEVEL=${EnvConfig.logLevel})");
+}
+
+void initLoggerForTest() {
+  logger = Logger(
+    level: Level.debug, // 完全に無効化
+    printer: SimplePrinter(),
+  );
 }

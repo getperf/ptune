@@ -1,7 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ptune/models/pomodoro_info.dart';
+import 'package:ptune/utils/logger.dart';
 
 void main() {
+  setUpAll(() {
+    initLoggerForTest();
+  });
   group('PomodoroInfo', () {
     test('default actual is null', () {
       final info = PomodoroInfo(planned: 3);

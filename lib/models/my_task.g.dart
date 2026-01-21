@@ -6,7 +6,7 @@ part of 'my_task.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_$MyTaskImpl _$$MyTaskImplFromJson(Map<String, dynamic> json) => _$MyTaskImpl(
+_MyTask _$MyTaskFromJson(Map<String, dynamic> json) => _MyTask(
   id: json['id'] as String,
   title: json['title'] as String,
   tasklistId: json['tasklistId'] as String?,
@@ -35,20 +35,19 @@ _$MyTaskImpl _$$MyTaskImplFromJson(Map<String, dynamic> json) => _$MyTaskImpl(
   deleted: json['deleted'] as bool? ?? false,
 );
 
-Map<String, dynamic> _$$MyTaskImplToJson(_$MyTaskImpl instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'title': instance.title,
-      'tasklistId': instance.tasklistId,
-      'note': instance.note,
-      'parent': instance.parent,
-      'position': instance.position,
-      'pomodoro': instance.pomodoro,
-      'status': instance.status,
-      'subTasks': instance.subTasks,
-      'due': instance.due?.toIso8601String(),
-      'started': instance.started?.toIso8601String(),
-      'completed': instance.completed?.toIso8601String(),
-      'updated': instance.updated?.toIso8601String(),
-      'deleted': instance.deleted,
-    };
+Map<String, dynamic> _$MyTaskToJson(_MyTask instance) => <String, dynamic>{
+  'id': instance.id,
+  'title': instance.title,
+  'tasklistId': instance.tasklistId,
+  'note': instance.note,
+  'parent': instance.parent,
+  'position': instance.position,
+  'pomodoro': instance.pomodoro,
+  'status': instance.status,
+  'subTasks': instance.subTasks,
+  'due': instance.due?.toIso8601String(),
+  'started': instance.started?.toIso8601String(),
+  'completed': instance.completed?.toIso8601String(),
+  'updated': instance.updated?.toIso8601String(),
+  'deleted': instance.deleted,
+};

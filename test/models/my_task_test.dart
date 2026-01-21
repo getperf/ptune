@@ -2,8 +2,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ptune/models/my_task.dart';
 import 'package:ptune/models/pomodoro_info.dart';
 import 'package:ptune/models/my_task_ext.dart';
+import 'package:ptune/utils/logger.dart';
 
 void main() {
+  setUpAll(() {
+    initLoggerForTest();
+  });
+
   group('MyTask', () {
     test('toDisplayString without pomodoro', () {
       final task = MyTask(id: '1', title: 'Write Code');
