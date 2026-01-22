@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ptune/providers/pomodoro_scheduler_provider.dart';
 import 'package:ptune/providers/task_provider.dart';
+import 'package:ptune/providers/timer_completed_task_provider.dart';
 import 'package:ptune/providers/timer_controller_provider.dart';
 import 'package:ptune/providers/timer_event_provider.dart';
 import 'package:ptune/states/over_limit_state.dart';
@@ -17,11 +18,14 @@ class TimerView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final task = ref.watch(selectedTimerTaskProvider);
+    final runningTask = ref.watch(selectedTimerTaskProvider);
+    final completedTask = ref.watch(completedTimerTaskProvider);
+    final displayTask = runningTask ?? completedTask;
+
     final timerState = ref.watch(remainingTimeProvider);
     final phase = ref.watch(timerPhaseProvider);
     final sessionType = ref.watch(sessionTypeProvider);
-    final taskParentId = task?.parent;
+    final taskParentId = displayTask?.parent;
     final parentTask = taskParentId != null
         ? ref.read(tasksProvider.notifier).findById(taskParentId)
         : null;
@@ -72,16 +76,16 @@ class TimerView extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             TaskHeader(
-              task: task,
+              task: displayTask,
               parentTask: parentTask,
-              onToggle: task == null
+              onToggle: displayTask == null
                   ? null
-                  : () async => await controller.toggleTask(task.id),
+                  : () async => await controller.toggleTask(displayTask.id),
               onGoHome: () => context.go('/home'),
             ),
             const SizedBox(height: 16),
             TimerDisplay(
-              task: task,
+              task: displayTask,
               phase: phase,
               timerState: timerState,
               sessionType: sessionType,

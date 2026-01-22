@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:ptune/providers/task_review/task_review_provider.dart';
+import 'package:ptune/providers/timer_completed_task_provider.dart';
 import 'package:ptune/providers/timer_event_provider.dart';
 import 'package:ptune/states/blink_notifier.dart';
 import 'package:ptune/states/over_limit_state.dart';
@@ -175,18 +177,39 @@ class TimerController {
     if (!canProceed) {
       ref.read(overLimitProvider.notifier).state = true;
 
-      await _proceedToNextSession(
-        skipBreak: true,
-        autoStart: false,
-      );
+      await _proceedToNextSession(skipBreak: true, autoStart: false);
       return;
     }
 
     final isAuto = ref.read(autoModeProvider).isAutoEnabled;
-    await _proceedToNextSession(
-      skipBreak: false,
-      autoStart: isAuto,
-    );
+    await _proceedToNextSession(skipBreak: false, autoStart: isAuto);
+  }
+
+  void _clearReviewState() {
+    ref.read(taskReviewProvider.notifier).clear();
+    ref.read(completedTimerTaskProvider.notifier).state = null;
+  }
+
+  Future<void> _revertCompletedTaskIfNeeded() async {
+    final completed = ref.read(completedTimerTaskProvider);
+    if (completed == null) return;
+
+    // completed → needsAction に戻す
+    if (completed.status == "completed") {
+      final reverted = completed.copyWith(status: "needsAction");
+
+      // commit=false（Home 戻り時のみ commit する想定）
+      await ref
+          .read(tasksProvider.notifier)
+          .updateTask(reverted, commit: false);
+
+      // 選択タスクとして復帰
+      ref.read(selectedTimerTaskProvider.notifier).state = reverted;
+    }
+
+    // レビュー状態を破棄
+    ref.read(taskReviewProvider.notifier).clear();
+    ref.read(completedTimerTaskProvider.notifier).state = null;
   }
 
   /// タイマー開始（初回時にtick即時実行）
@@ -253,7 +276,8 @@ class TimerController {
   }
 
   /// タイマーを再開
-  void resume() {
+  void resume() async {
+    await _revertCompletedTaskIfNeeded();
     if (_timer.isRunning) {
       logger.w("[TimerController] resume() ignored: already running");
       return;
@@ -262,11 +286,17 @@ class TimerController {
     ref.read(remainingTimeProvider.notifier).resume();
     ref.read(timerPhaseProvider.notifier).state = TimerPhase.running;
     _timer.start();
-    _tick(); // 再開直後に即tick
+    _tick();
 
+    // ★ タスクがある場合のみログ記録
     final task = ref.read(selectedTimerTaskProvider);
-    _session.record(phase: TimerPhase.running, taskId: task?.id);
-    WakelockPlus.enable(); // ←追加
+    if (task != null) {
+      _session.record(phase: TimerPhase.running, taskId: task.id);
+    } else {
+      logger.i("[TimerController] resumed without task");
+    }
+
+    WakelockPlus.enable();
     logger.i("[TimerController] resumed");
   }
 
@@ -286,6 +316,7 @@ class TimerController {
 
   /// 現在のセッションをスキップ(停止)してリセット
   Future<void> reset() async {
+    await _revertCompletedTaskIfNeeded();
     await _finalizeSessionAndApply();
     final isAuto = ref.read(autoModeProvider).isAutoEnabled;
     await _proceedToNextSession(skipBreak: true, autoStart: isAuto);
@@ -314,7 +345,8 @@ class TimerController {
     ref.read(remainingTimeProvider.notifier).resetToZero();
 
     logger.i(
-        "[TimerController] resetAllForImport(): session cleared, ready state");
+      "[TimerController] resetAllForImport(): session cleared, ready state",
+    );
   }
 
   /// 指定タスクを完了／未完了に切り替え、選択中であれば解除
@@ -323,11 +355,24 @@ class TimerController {
     await _finalizeSessionAndApply(skipUpdateTasks: true);
 
     final tasksNotifier = ref.read(tasksProvider.notifier);
+
+    // 1) 完了トグル（tasksProvider 内の状態は更新される）
     await tasksNotifier.toggleComplete(id);
 
-    // タスクが完了になったら選択解除＋一時停止
-    final task = ref.read(selectedTimerTaskProvider);
-    if (task?.id == id && task?.status == "needsAction") {
+    // 2) ★ 更新後のタスクを tasksProvider から引き直す
+    final updated = tasksNotifier.findById(id);
+
+    // 3) ★ completed ならレビュー表示用に保持
+    if (updated != null && updated.status == "completed") {
+      ref.read(completedTimerTaskProvider.notifier).state = updated;
+    } else {
+      // 未完了に戻した場合などはクリア
+      ref.read(completedTimerTaskProvider.notifier).state = null;
+    }
+
+    // 4) ★ 選択中タスクが対象なら解除して一時停止（status 判定に依存しない）
+    final selected = ref.read(selectedTimerTaskProvider);
+    if (selected?.id == id) {
       ref.read(selectedTimerTaskProvider.notifier).state = null;
       pause();
     }
