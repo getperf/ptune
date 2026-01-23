@@ -60,7 +60,7 @@ void main() async {
     logger.d("[main] windowManager initialized");
 
     WindowOptions windowOptions = const WindowOptions(
-      size: Size(380, 800),
+      size: Size(380, 840),
       center: true,
       title: 'Pomodoro Tasks',
     );

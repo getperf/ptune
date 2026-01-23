@@ -56,18 +56,31 @@ class TaskHeader extends StatelessWidget {
             ),
             const SizedBox(width: 6),
             Expanded(
-              child: Text(
-                task!.title,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-                style: TextStyle(
-                  fontSize: _isCompleted ? 14 : 18,
-                  color: _isCompleted ? Colors.grey : Colors.white,
-                  fontWeight: _isCompleted
-                      ? FontWeight.normal
-                      : FontWeight.w600,
-                ),
-              ),
+              child: _isCompleted
+                  ? GestureDetector(
+                      onTap: onGoHome,
+                      child: const Text(
+                        'タスクを選んでください',
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.blue,
+                          decoration: TextDecoration.underline,
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                    )
+                  : Text(
+                      task!.title,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
             ),
           ],
         ),

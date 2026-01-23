@@ -54,16 +54,22 @@ class HomeController {
   }
 
   void startTimer(MyTask task) {
+    // 1. 切替対象タスクを明示
     ref.read(selectedTimerTaskProvider.notifier).state = task;
     logger.i("[HomeController] startTimer: ${task.id} (${task.title})");
+
+    // 2. 現在のフェーズで分岐
     final phase = ref.read(timerPhaseProvider);
+
     if (phase == TimerPhase.paused || phase == TimerPhase.running) {
-      logger.i("[HomeController] Starting task without resetting timer state");
+      logger.i("[HomeController] switchTask");
       ref.read(timerControllerProvider).switchTask();
     } else {
       ref.read(timerPhaseProvider.notifier).state = TimerPhase.ready;
       ref.read(timerControllerProvider).start();
     }
+
+    // 3. タイマー画面へ遷移
     context.push('/timer');
   }
 
@@ -87,8 +93,11 @@ class HomeController {
     try {
       final plan = planInsertLast(tasks);
       final newTask = await taskService.addTask(task);
-      await moveTaskApi(newTask.id,
-          previousId: plan.previousId, parentId: plan.parent);
+      await moveTaskApi(
+        newTask.id,
+        previousId: plan.previousId,
+        parentId: plan.parent,
+      );
       printTasks(tasks);
 
       logger.i("[HomeController] submitTask $newTask");
@@ -112,8 +121,11 @@ class HomeController {
       ref.invalidate(tasksProvider);
       logger.i("[HomeController] deleteCompletedTasks");
     } catch (e, st) {
-      logger.e('[HomeController] deleteCompletedTasks failed',
-          error: e, stackTrace: st);
+      logger.e(
+        '[HomeController] deleteCompletedTasks failed',
+        error: e,
+        stackTrace: st,
+      );
       if (context.mounted) handleTaskError(context, e);
     }
   }
@@ -123,7 +135,8 @@ class HomeController {
     final tasks = asyncTasks.value ?? [];
 
     logger.i(
-        "[moveTask] move ${task.id}, previous: ${previous?.id}, asChild: $asChild");
+      "[moveTask] move ${task.id}, previous: ${previous?.id}, asChild: $asChild",
+    );
 
     final plan = planMove(tasks, task, previous, asChild);
 
@@ -133,8 +146,11 @@ class HomeController {
     }
 
     try {
-      await moveTaskApi(task.id,
-          previousId: plan.previousId, parentId: plan.parent);
+      await moveTaskApi(
+        task.id,
+        previousId: plan.previousId,
+        parentId: plan.parent,
+      );
       printTasks(tasks);
     } catch (e, st) {
       logger.e('[HomeController] moveTask failed', error: e, stackTrace: st);
@@ -183,8 +199,11 @@ class HomeController {
       );
       printTasks(tasks);
     } catch (e, st) {
-      logger.e('[HomeController] toggleSubtask failed',
-          error: e, stackTrace: st);
+      logger.e(
+        '[HomeController] toggleSubtask failed',
+        error: e,
+        stackTrace: st,
+      );
       if (context.mounted) handleTaskError(context, e);
     }
   }

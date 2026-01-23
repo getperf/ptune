@@ -26,7 +26,6 @@ import 'package:ptune/utils/logger.dart';
 /// Pomodoroセッションの制御ロジック全体を担うコントローラ。
 /// タイマーの起動・一時停止・再開・停止・リセット処理、
 /// セッションログ記録や自動モード判定を行う。
-
 class TimerController {
   final Ref ref;
 
@@ -79,7 +78,6 @@ class TimerController {
       _lastCommitSecond = elapsed;
     }
 
-    // debugレベル出力をinfoから分離（tick量削減）
     logger.d("[tick] remaining: $timerState $_session");
 
     if (timerState.remaining <= 0) {
@@ -98,13 +96,12 @@ class TimerController {
     final applier = ref.read(pomodoroSummaryApplierProvider);
     final updatedTasks = await applier.apply(ref, summary);
 
-    // ここで保存(commit=true)
     final notifier = ref.read(tasksProvider.notifier);
     for (final t in updatedTasks) {
       await notifier.updateTask(t, commit: true);
     }
 
-    // selectedTimerTask の更新が必要な場合はここで行う
+    // selectedTimerTask の更新が必要な場合はここで行う（同一タスク前提）
     if (updatedTasks.isNotEmpty) {
       ref.read(selectedTimerTaskProvider.notifier).state = updatedTasks.first;
     }
@@ -119,7 +116,6 @@ class TimerController {
     final applier = ref.read(pomodoroSummaryApplierProvider);
     final updatedTasks = await applier.apply(ref, summary);
 
-    // セッション終了でも updateTasks は使わない
     if (!skipUpdateTasks) {
       final notifier = ref.read(tasksProvider.notifier);
       for (final t in updatedTasks) {
@@ -160,11 +156,9 @@ class TimerController {
   }
 
   /// セッション完了時に呼ばれる処理
-  /// - 集計処理
-  /// - AutoSafeGuardで自動モードの停止判定
-  /// - 次セッションへの遷移
   Future<void> _onSessionComplete() async {
-    _finalizeSessionAndApply();
+    // ★ await 漏れ修正
+    await _finalizeSessionAndApply();
 
     final guard = AutoSafeGuard(
       controller: this,
@@ -176,7 +170,6 @@ class TimerController {
 
     if (!canProceed) {
       ref.read(overLimitProvider.notifier).state = true;
-
       await _proceedToNextSession(skipBreak: true, autoStart: false);
       return;
     }
@@ -185,11 +178,20 @@ class TimerController {
     await _proceedToNextSession(skipBreak: false, autoStart: isAuto);
   }
 
-  Future<void> _revertCompletedTaskIfNeeded() async {
+  /// 完了タスクの「一時的な復帰」を必要に応じて行う
+  /// - IMPORTANT: タスク切替時には selectedTimerTask を上書きしない
+  Future<void> _revertCompletedTaskIfNeeded({String? intendedTaskId}) async {
     final completed = ref.read(completedTimerTaskProvider);
     if (completed == null) return;
 
-    // completed → needsAction に戻す
+    // タスク切替（intended が別ID）では復帰しない
+    if (intendedTaskId != null && completed.id != intendedTaskId) {
+      logger.d(
+        "[TimerController] skip revertCompleted: completed=${completed.id}, intended=$intendedTaskId",
+      );
+      return;
+    }
+
     if (completed.status == "completed") {
       final reverted = completed.copyWith(status: "needsAction");
 
@@ -198,7 +200,7 @@ class TimerController {
           .read(tasksProvider.notifier)
           .updateTask(reverted, commit: false);
 
-      // 選択タスクとして復帰
+      // 同一タスクを継続する場合のみ選択タスクとして復帰
       ref.read(selectedTimerTaskProvider.notifier).state = reverted;
     }
 
@@ -209,22 +211,28 @@ class TimerController {
 
   /// タイマー開始（初回時にtick即時実行）
   void start() {
-    final task = ref.read(selectedTimerTaskProvider.notifier).state;
+    final task = ref.read(selectedTimerTaskProvider);
     logger.i("[TimerController] start() task: ${task?.title ?? 'タスクなし'}");
 
     final phase = ref.read(timerPhaseProvider);
     final type = ref.read(sessionTypeProvider);
     final durationSec = scheduler.getDuration(type);
+
     if (phase == TimerPhase.ready) {
       _session.pomodoroUnitSec = durationSec;
       ref.read(remainingTimeProvider.notifier).start(durationSec);
       ref.read(timerPhaseProvider.notifier).state = TimerPhase.running;
     }
+
     if (task != null) {
       logger.d("[TimerController] mark stated : $task");
       final updated = task.markStarted();
-      final notifier = ref.read(tasksProvider.notifier);
-      notifier.updateTask(updated, commit: false);
+      // ★ 非同期を待たないと切替直後に状態が揺れるため await 相当が望ましいが、
+      //   ここは既存構造を崩さず Future を握らない（最小修正）:
+      unawaited(
+        ref.read(tasksProvider.notifier).updateTask(updated, commit: false),
+      );
+
       logger.d("[TimerController] append log : $type $task");
       _session.sessionType = ref.read(sessionTypeProvider);
       _session.record(phase: TimerPhase.running, taskId: task.id);
@@ -239,17 +247,24 @@ class TimerController {
   }
 
   /// タスク切替時にセッションログを追記
+  /// - Home側で selectedTimerTaskProvider を更新済みである前提
+  /// - paused の場合は再開するが、完了タスク復帰処理で選択タスクを上書きしない
   void switchTask() {
-    final task = ref.read(selectedTimerTaskProvider.notifier).state;
-    if (task != null) {
-      logger.d("[TimerController] append log : $task");
-      final timerPhase = ref.read(timerPhaseProvider);
-      _session.record(phase: timerPhase, taskId: task.id);
-      logger.d("[DEBUG] switchTask: phase=$timerPhase");
-      if (timerPhase == TimerPhase.paused) {
-        resume();
-      }
+    final next = ref.read(selectedTimerTaskProvider);
+    if (next == null) {
+      logger.w("[TimerController] switchTask() ignored: no selected task");
+      return;
     }
+
+    final timerPhase = ref.read(timerPhaseProvider);
+    _session.record(phase: timerPhase, taskId: next.id);
+    logger.d("[TimerController] switchTask: phase=$timerPhase next=${next.id}");
+
+    if (timerPhase == TimerPhase.paused) {
+      // ★ intendedTaskId を渡して「完了タスク復帰で上書き」されないようにする
+      resume(intendedTaskId: next.id);
+    }
+
     logger.i("[TimerController] switch task");
   }
 
@@ -271,8 +286,10 @@ class TimerController {
   }
 
   /// タイマーを再開
-  void resume() async {
-    await _revertCompletedTaskIfNeeded();
+  /// - intendedTaskId を指定すると、完了タスク復帰が別タスクに干渉しない
+  void resume({String? intendedTaskId}) async {
+    await _revertCompletedTaskIfNeeded(intendedTaskId: intendedTaskId);
+
     if (_timer.isRunning) {
       logger.w("[TimerController] resume() ignored: already running");
       return;
@@ -283,7 +300,6 @@ class TimerController {
     _timer.start();
     _tick();
 
-    // ★ タスクがある場合のみログ記録
     final task = ref.read(selectedTimerTaskProvider);
     if (task != null) {
       _session.record(phase: TimerPhase.running, taskId: task.id);
@@ -304,14 +320,16 @@ class TimerController {
 
     ref.read(remainingTimeProvider.notifier).stop();
     ref.read(timerPhaseProvider.notifier).state = TimerPhase.ready;
-    WakelockPlus.disable(); // ←追加
+    WakelockPlus.disable();
 
     logger.i("[TimerController] stopped and state is ready");
   }
 
   /// 現在のセッションをスキップ(停止)してリセット
   Future<void> reset() async {
-    await _revertCompletedTaskIfNeeded();
+    final selected = ref.read(selectedTimerTaskProvider);
+    await _revertCompletedTaskIfNeeded(intendedTaskId: selected?.id);
+
     await _finalizeSessionAndApply();
     final isAuto = ref.read(autoModeProvider).isAutoEnabled;
     await _proceedToNextSession(skipBreak: true, autoStart: isAuto);
@@ -321,22 +339,18 @@ class TimerController {
 
   // タイマーとスケジューラのリセット
   Future<void> resetTimerState() async {
-    // タイマー完全停止
     if (_timer.isRunning) _timer.stop();
     ref.read(remainingTimeProvider.notifier).stop();
     WakelockPlus.disable();
 
-    // Pomodoroセッション初期化
     scheduler.reset();
     _resetSessionState();
     _session.clear(); // ←PomodoroSessionにclear()を追加
 
-    // 状態リセット
     ref.read(timerPhaseProvider.notifier).state = TimerPhase.ready;
     ref.read(sessionTypeProvider.notifier).state = SessionType.work;
     ref.read(selectedTimerTaskProvider.notifier).state = null;
 
-    // 残り時間をゼロ化
     ref.read(remainingTimeProvider.notifier).resetToZero();
 
     logger.i(
@@ -346,26 +360,20 @@ class TimerController {
 
   /// 指定タスクを完了／未完了に切り替え、選択中であれば解除
   Future<void> toggleTask(String id) async {
-    // セッション集計は行うが、完了トグル時は updateTasks をスキップ
     await _finalizeSessionAndApply(skipUpdateTasks: true);
 
     final tasksNotifier = ref.read(tasksProvider.notifier);
 
-    // 1) 完了トグル（tasksProvider 内の状態は更新される）
     await tasksNotifier.toggleComplete(id);
 
-    // 2) ★ 更新後のタスクを tasksProvider から引き直す
     final updated = tasksNotifier.findById(id);
 
-    // 3) ★ completed ならレビュー表示用に保持
     if (updated != null && updated.status == "completed") {
       ref.read(completedTimerTaskProvider.notifier).state = updated;
     } else {
-      // 未完了に戻した場合などはクリア
       ref.read(completedTimerTaskProvider.notifier).state = null;
     }
 
-    // 4) ★ 選択中タスクが対象なら解除して一時停止（status 判定に依存しない）
     final selected = ref.read(selectedTimerTaskProvider);
     if (selected?.id == id) {
       ref.read(selectedTimerTaskProvider.notifier).state = null;
