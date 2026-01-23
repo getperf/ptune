@@ -39,7 +39,8 @@ void main() async {
       final clientId = EnvConfig.getClientId();
       if (clientId.isNotEmpty) {
         logger.i(
-            "[main] Initializing GoogleSignIn with CLIENT_ID=$clientId (platform=${Platform.operatingSystem})");
+          "[main] Initializing GoogleSignIn with CLIENT_ID=$clientId (platform=${Platform.operatingSystem})",
+        );
         await GoogleSignIn.instance.initialize(serverClientId: clientId);
       } else {
         logger.e("[main] GOOGLE_CLIENT_ID is empty, .env misconfiguration?");
@@ -59,7 +60,7 @@ void main() async {
     logger.d("[main] windowManager initialized");
 
     WindowOptions windowOptions = const WindowOptions(
-      size: Size(380, 720),
+      size: Size(380, 800),
       center: true,
       title: 'Pomodoro Tasks',
     );

@@ -185,11 +185,6 @@ class TimerController {
     await _proceedToNextSession(skipBreak: false, autoStart: isAuto);
   }
 
-  void _clearReviewState() {
-    ref.read(taskReviewProvider.notifier).clear();
-    ref.read(completedTimerTaskProvider.notifier).state = null;
-  }
-
   Future<void> _revertCompletedTaskIfNeeded() async {
     final completed = ref.read(completedTimerTaskProvider);
     if (completed == null) return;

@@ -22,7 +22,7 @@ class ReviewFlagChips extends ConsumerWidget {
           labelPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
           label: Text(
             _labelOf(flag),
-            style: const TextStyle(fontSize: 12), // ★ フォント縮小
+            style: const TextStyle(fontSize: 16), // ★ フォント縮小
           ),
           selected: selected,
           onSelected: (_) => notifier.toggle(flag),
@@ -42,7 +42,7 @@ class ReviewFlagChips extends ConsumerWidget {
       case ReviewFlag.scopeExpanded:
         return 'スコープ拡大';
       case ReviewFlag.unresolved:
-        return '未解決';
+        return '残件あり';
       case ReviewFlag.newIssueFound:
         return '新たな課題';
     }

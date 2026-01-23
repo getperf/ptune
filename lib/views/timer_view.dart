@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:ptune/controllers/task_review_commit_controller.dart';
 import 'package:ptune/providers/pomodoro_scheduler_provider.dart';
 import 'package:ptune/providers/task_provider.dart';
 import 'package:ptune/providers/timer_completed_task_provider.dart';
@@ -65,8 +66,13 @@ class TimerView extends ConsumerWidget {
         title: const Text('タイマー'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            context.pop();
+          onPressed: () async {
+            final commitController = TaskReviewCommitController(ref);
+            await commitController.onExitToHome();
+
+            if (context.mounted) {
+              context.pop();
+            }
           },
         ),
       ),

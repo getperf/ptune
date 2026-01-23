@@ -1,3 +1,4 @@
+import 'package:ptune/factories/review_flag_notes_encoder.dart';
 import 'package:ptune/factories/task_factory.dart';
 import 'package:ptune/models/my_task.dart';
 
@@ -13,6 +14,11 @@ extension TaskFactoryExt on TaskFactory {
       final p = task.pomodoro!;
       if (p.planned > 0) notesParts.add('🍅x${p.planned}');
       if (p.actual != null) notesParts.add('✅x${p.actual!.toStringAsFixed(1)}');
+    }
+
+    final reviewNote = ReviewFlagNotesEncoder.encode(task.reviewFlags);
+    if (reviewNote != null && reviewNote.isNotEmpty) {
+      notesParts.add(reviewNote);
     }
 
     if (task.started != null) {
