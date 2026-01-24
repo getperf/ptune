@@ -2,11 +2,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ptune/models/my_task.dart';
 import 'package:ptune/models/review_flag.dart';
+import 'package:ptune/utils/logger.dart';
 
 import 'task_review_state.dart';
 
 class TaskReviewNotifier extends StateNotifier<TaskReviewState> {
-  TaskReviewNotifier() : super(TaskReviewState.initial());
+  final String taskId;
+
+  TaskReviewNotifier(this.taskId) : super(TaskReviewState.initial());
 
   void toggle(ReviewFlag flag) {
     final next = Set<ReviewFlag>.from(state.selected);
@@ -17,7 +20,9 @@ class TaskReviewNotifier extends StateNotifier<TaskReviewState> {
   }
 
   void clear() {
+    logger.d('[TaskReview] clear before=$state');
     state = TaskReviewState.initial();
+    logger.d('[TaskReview] clear after=$state');
   }
 
   /// タスク完了時にレビュー結果を反映

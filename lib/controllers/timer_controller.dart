@@ -205,7 +205,10 @@ class TimerController {
     }
 
     // レビュー状態を破棄
-    ref.read(taskReviewProvider.notifier).clear();
+    final task = ref.read(completedTimerTaskProvider);
+    if (task != null) {
+      ref.read(taskReviewProvider(task.id).notifier).clear();
+    }
     ref.read(completedTimerTaskProvider.notifier).state = null;
   }
 

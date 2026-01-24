@@ -13,4 +13,9 @@ class TaskReviewState {
   TaskReviewState copyWith({Set<ReviewFlag>? selected}) {
     return TaskReviewState(selected: selected ?? this.selected);
   }
+
+  @override
+  String toString() {
+    return 'TaskReviewState(selected=$selected)';
+  }
 }

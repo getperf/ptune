@@ -42,7 +42,6 @@ class TaskHeader extends StatelessWidget {
     if (task == null) {
       return _buildSelectTaskLink();
     }
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -88,7 +87,7 @@ class TaskHeader extends StatelessWidget {
             style: TextStyle(fontSize: 11, color: Colors.grey),
           ),
           const SizedBox(height: 6),
-          const ReviewFlagChips(),
+          ReviewFlagChips(taskId: task!.id),
         ],
       ],
     );
