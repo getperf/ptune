@@ -18,21 +18,29 @@ class TaskHeader extends StatelessWidget {
 
   bool get _isCompleted => task?.status == "completed";
 
+  /// 「タスクを選んでください」リンク表示（共通）
+  Widget _buildSelectTaskLink({double fontSize = 18}) {
+    return GestureDetector(
+      onTap: onGoHome,
+      child: Text(
+        'タスクを選んでください',
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
+        style: TextStyle(
+          fontSize: fontSize,
+          color: Colors.blue,
+          decoration: TextDecoration.underline,
+          fontWeight: FontWeight.normal,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // ★ task が null の場合は安全に早期リターン
+    // task 未選択時
     if (task == null) {
-      return GestureDetector(
-        onTap: onGoHome,
-        child: const Text(
-          "タスクを選んでください",
-          style: TextStyle(
-            fontSize: 14,
-            decoration: TextDecoration.underline,
-            color: Colors.blue,
-          ),
-        ),
-      );
+      return _buildSelectTaskLink();
     }
 
     return Column(
@@ -57,20 +65,7 @@ class TaskHeader extends StatelessWidget {
             const SizedBox(width: 6),
             Expanded(
               child: _isCompleted
-                  ? GestureDetector(
-                      onTap: onGoHome,
-                      child: const Text(
-                        'タスクを選んでください',
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.blue,
-                          decoration: TextDecoration.underline,
-                          fontWeight: FontWeight.normal,
-                        ),
-                      ),
-                    )
+                  ? _buildSelectTaskLink()
                   : Text(
                       task!.title,
                       overflow: TextOverflow.ellipsis,
@@ -85,7 +80,7 @@ class TaskHeader extends StatelessWidget {
           ],
         ),
 
-        // ★ 完了時のみレビューUI
+        // 完了時のみレビューUI
         if (_isCompleted) ...[
           const SizedBox(height: 6),
           const Text(
