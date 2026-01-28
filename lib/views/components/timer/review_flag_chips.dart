@@ -5,13 +5,13 @@ import 'package:ptune/models/review_flag.dart';
 import 'package:ptune/providers/task_review/task_review_provider.dart';
 
 class ReviewFlagChips extends ConsumerWidget {
-  const ReviewFlagChips({super.key});
+  final String taskId;
+  const ReviewFlagChips({super.key, required this.taskId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(taskReviewProvider);
-    final notifier = ref.read(taskReviewProvider.notifier);
-
+    final state = ref.watch(taskReviewProvider(taskId));
+    final notifier = ref.read(taskReviewProvider(taskId).notifier);
     return Wrap(
       spacing: 6, // ★ 縮小
       runSpacing: 4, // ★ 縮小

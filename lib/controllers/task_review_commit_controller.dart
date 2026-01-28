@@ -19,14 +19,17 @@ class TaskReviewCommitController {
 
     try {
       final completedTask = ref.read(completedTimerTaskProvider);
-      final reviewState = ref.read(taskReviewProvider);
+      if (completedTask == null) return;
+
+      final taskId = completedTask.id;
+      final reviewState = ref.read(taskReviewProvider(taskId));
 
       if (!shouldCommitTaskReview(
         completedTask: completedTask,
         review: reviewState,
       )) {
         logger.i('[TaskReviewCommit] skip commit');
-        _clearStates();
+        _clearStates(completedTask);
         return;
       }
 
@@ -38,7 +41,7 @@ class TaskReviewCommitController {
 
       logger.i('[TaskReviewCommit] committed review flags');
 
-      _clearStates();
+      _clearStates(completedTask);
     } catch (e, st) {
       // 失敗時は状態を保持（再度 Home 戻りで再試行可）
       logger.e('[TaskReviewCommit] signIn failed: $e, $st');
@@ -51,8 +54,8 @@ class TaskReviewCommitController {
     return task.copyWith(reviewFlags: reviewState.selected.toList());
   }
 
-  void _clearStates() {
-    ref.read(taskReviewProvider.notifier).clear();
+  void _clearStates(MyTask completedTask) {
+    ref.read(taskReviewProvider(completedTask.id).notifier).clear();
     ref.read(completedTimerTaskProvider.notifier).state = null;
   }
 }

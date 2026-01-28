@@ -5,6 +5,6 @@ import 'task_review_notifier.dart';
 import 'task_review_state.dart';
 
 final taskReviewProvider =
-    StateNotifierProvider<TaskReviewNotifier, TaskReviewState>(
-      (ref) => TaskReviewNotifier(),
+    StateNotifierProvider.family<TaskReviewNotifier, TaskReviewState, String>(
+      (ref, taskId) => TaskReviewNotifier(taskId),
     );
