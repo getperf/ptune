@@ -3,7 +3,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 @JsonEnum(alwaysCreate: true)
 enum ReviewFlag {
-  stuckUnknown,
+  operationMiss,
   toolOrEnvIssue,
   decisionPending,
   scopeExpanded,

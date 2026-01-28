@@ -61,7 +61,7 @@ Map<String, dynamic> _$MyTaskToJson(_MyTask instance) => <String, dynamic>{
 };
 
 const _$ReviewFlagEnumMap = {
-  ReviewFlag.stuckUnknown: 'stuckUnknown',
+  ReviewFlag.operationMiss: 'operationMiss',
   ReviewFlag.toolOrEnvIssue: 'toolOrEnvIssue',
   ReviewFlag.decisionPending: 'decisionPending',
   ReviewFlag.scopeExpanded: 'scopeExpanded',

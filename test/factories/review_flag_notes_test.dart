@@ -16,10 +16,10 @@ void main() {
 
     test('encode multiple flags', () {
       final s = ReviewFlagNotesEncoder.encode([
-        ReviewFlag.stuckUnknown,
+        ReviewFlag.operationMiss,
         ReviewFlag.decisionPending,
       ]);
-      expect(s, '#ptune:review=stuckUnknown,decisionPending');
+      expect(s, '#ptune:review=operationMiss,decisionPending');
     });
 
     test('decode returns flags', () {
@@ -31,9 +31,9 @@ void main() {
 
     test('decode ignores unknown flags', () {
       final flags = ReviewFlagNotesDecoder.decode(
-        '#ptune:review=unknown,stuckUnknown',
+        '#ptune:review=unknown,operationMiss',
       );
-      expect(flags, [ReviewFlag.stuckUnknown]);
+      expect(flags, [ReviewFlag.operationMiss]);
     });
 
     test('decode with no review returns empty', () {

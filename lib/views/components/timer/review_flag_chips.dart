@@ -33,14 +33,14 @@ class ReviewFlagChips extends ConsumerWidget {
 
   String _labelOf(ReviewFlag flag) {
     switch (flag) {
-      case ReviewFlag.stuckUnknown:
-        return '原因不明';
+      case ReviewFlag.operationMiss:
+        return '止め忘れ';
       case ReviewFlag.toolOrEnvIssue:
         return '環境問題';
       case ReviewFlag.decisionPending:
-        return '判断保留';
+        return '未解決';
       case ReviewFlag.scopeExpanded:
-        return 'スコープ拡大';
+        return '難問';
       case ReviewFlag.unresolved:
         return '残件あり';
       case ReviewFlag.newIssueFound:
