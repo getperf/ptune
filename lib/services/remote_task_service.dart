@@ -1,10 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-// import 'package:ptune/exceptions/api_exceptions.dart';
 import 'package:ptune/exceptions/api_exeption.dart';
 import 'package:ptune/exceptions/task_service_exception.dart';
-import 'package:ptune/factories/task_factory_ext.dart';
 import 'package:ptune/models/my_task.dart';
+import 'package:ptune/models/my_task_notes_encoder.dart';
 import 'package:ptune/providers/task_list_provider.dart';
 import 'package:ptune/services/auth/google_auth_client.dart';
 import 'package:ptune/factories/task_factory.dart';
@@ -28,11 +27,15 @@ class RemoteTaskService {
     return list.id;
   }
 
+  // =========================
+  // 取得
+  // =========================
   Future<List<MyTask>> fetchTasks() async {
     final taskListId = await _getTaskListId();
     final url = Uri.parse(
       '$_baseUrl/lists/$taskListId/tasks?showCompleted=true&showHidden=true',
     );
+
     final response = await authClient.get(url);
 
     if (response.statusCode >= 400) {
@@ -48,9 +51,16 @@ class RemoteTaskService {
     return tasks;
   }
 
+  // =========================
+  // 更新
+  // =========================
   Future<void> saveTask(MyTask task) async {
     final taskListId = await _getTaskListId();
+
     final body = taskFactory.toApiData(task, forUpdate: true);
+
+    // ★ 新フォーマットで notes 生成
+    body['notes'] = MyTaskNotesEncoder.encode(task);
 
     final url = Uri.parse('$_baseUrl/lists/$taskListId/tasks/${task.id}');
     final request = http.Request('PATCH', url);
@@ -61,16 +71,28 @@ class RemoteTaskService {
 
     if (response.statusCode != 200) {
       final responseBody = await response.stream.bytesToString();
-      throw ApiException(response.statusCode, 'Failed to update task',
-          body: responseBody);
+      throw ApiException(
+        response.statusCode,
+        'Failed to update task',
+        body: responseBody,
+      );
     }
+
+    logger.i('[RemoteTaskService] saveTask: ${task.id}');
   }
 
+  // =========================
+  // 作成
+  // =========================
   Future<MyTask> createTask(MyTask task) async {
     final taskListId = await _getTaskListId();
     final url = Uri.parse('$_baseUrl/lists/$taskListId/tasks');
 
     final body = taskFactory.toApiData(task, forUpdate: false);
+
+    // ★ 新フォーマットで notes 生成
+    body['notes'] = MyTaskNotesEncoder.encode(task);
+
     final response = await authClient.post(
       url,
       headers: {'Content-Type': 'application/json'},
@@ -82,36 +104,53 @@ class RemoteTaskService {
     }
 
     final data = jsonDecode(response.body);
+
     final created = taskFactory.fromApiData(data, taskListId: taskListId);
+
     logger.i('[RemoteTaskService] createTask: ${created.id}:${created.title}');
     return created;
   }
 
+  // =========================
+  // 一括保存
+  // =========================
   Future<void> saveTasks(List<MyTask> tasks) async {
     for (final task in tasks) {
       await saveTask(task);
     }
   }
 
-  Future<void> moveTask(String taskId,
-      {String? parent, String? previous}) async {
+  // =========================
+  // 移動
+  // =========================
+  Future<void> moveTask(
+    String taskId, {
+    String? parent,
+    String? previous,
+  }) async {
     final queryParams = <String, String>{};
     if (parent != null) queryParams['parent'] = parent;
     if (previous != null) queryParams['previous'] = previous;
 
     final taskListId = await _getTaskListId();
-    final uri = Uri.parse('$_baseUrl/lists/$taskListId/tasks/$taskId/move')
-        .replace(queryParameters: queryParams);
+    final uri = Uri.parse(
+      '$_baseUrl/lists/$taskListId/tasks/$taskId/move',
+    ).replace(queryParameters: queryParams);
 
     final response = await authClient.post(uri);
+
     if (response.statusCode != 200) {
       _handleErrorResponse(response);
     }
   }
 
+  // =========================
+  // 削除
+  // =========================
   Future<void> deleteTask(String id) async {
     final taskListId = await _getTaskListId();
     final url = Uri.parse('$_baseUrl/lists/$taskListId/tasks/$id');
+
     final response = await authClient.delete(url);
 
     if (response.statusCode >= 400) {
@@ -121,8 +160,12 @@ class RemoteTaskService {
     logger.i('[RemoteTaskService] deleteTask: $id');
   }
 
+  // =========================
+  // エラー処理
+  // =========================
   void _handleErrorResponse(http.Response response) {
     String message = 'Unknown error';
+
     try {
       final data = jsonDecode(response.body);
       message = data['error']?['message'] ?? message;
@@ -138,8 +181,12 @@ class RemoteTaskService {
       case 500:
         throw ServerErrorException(message, body: response.body);
       default:
-        throw ApiException(response.statusCode, message,
-            body: response.body, notifyUser: false);
+        throw ApiException(
+          response.statusCode,
+          message,
+          body: response.body,
+          notifyUser: false,
+        );
     }
   }
 }

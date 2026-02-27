@@ -38,6 +38,10 @@ _MyTask _$MyTaskFromJson(Map<String, dynamic> json) => _MyTask(
           ?.map((e) => $enumDecode(_$ReviewFlagEnumMap, e))
           .toList() ??
       const <ReviewFlag>[],
+  goal: json['goal'] as String?,
+  tags:
+      (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+      const <String>[],
 );
 
 Map<String, dynamic> _$MyTaskToJson(_MyTask instance) => <String, dynamic>{
@@ -58,6 +62,8 @@ Map<String, dynamic> _$MyTaskToJson(_MyTask instance) => <String, dynamic>{
   'reviewFlags': instance.reviewFlags
       .map((e) => _$ReviewFlagEnumMap[e]!)
       .toList(),
+  'goal': instance.goal,
+  'tags': instance.tags,
 };
 
 const _$ReviewFlagEnumMap = {

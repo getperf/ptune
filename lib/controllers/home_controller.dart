@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ptune/models/my_task.dart';
+import 'package:ptune/models/pomodoro_info.dart';
 import 'package:ptune/models/timer_phase.dart';
 import 'package:ptune/providers/is_online_provider.dart';
 import 'package:ptune/providers/task_factory_provider.dart';
@@ -73,17 +74,30 @@ class HomeController {
     context.push('/timer');
   }
 
-  Future<void> submitTask(String title, String note) async {
-    final taskFactory = ref.read(taskFactoryProvider);
+  int _extractPlanned(String label) {
+    final match = RegExp(r'🍅x(\d+)').firstMatch(label);
+    return match != null ? int.parse(match.group(1)!) : 0;
+  }
+
+  Future<void> submitTask(String title, String label) async {
     final list = ref.read(selectedTaskListProvider);
+
     if (list == null || list.id.isEmpty) {
       _notifyUser('タスクリストが未選択です');
       return;
     }
-    final task = taskFactory.createNewTask(
-      title: title,
-      rawNote: note,
+
+    // --- 変換ロジック ---
+    final planned = _extractPlanned(label);
+    final isBlocked = label.contains('🚫');
+    final finalTitle = isBlocked ? '$title🚫' : title;
+
+    final task = MyTask(
+      id: '',
+      title: finalTitle,
       tasklistId: list.id,
+      status: 'needsAction',
+      pomodoro: PomodoroInfo(planned: planned),
     );
 
     final taskService = ref.read(taskServiceProvider);
@@ -93,12 +107,12 @@ class HomeController {
     try {
       final plan = planInsertLast(tasks);
       final newTask = await taskService.addTask(task);
+
       await moveTaskApi(
         newTask.id,
         previousId: plan.previousId,
         parentId: plan.parent,
       );
-      printTasks(tasks);
 
       logger.i("[HomeController] submitTask $newTask");
       ref.invalidate(tasksProvider);
