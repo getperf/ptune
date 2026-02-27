@@ -7,6 +7,6 @@ bool shouldCommitTaskReview({
 }) {
   if (completedTask == null) return false;
   if (completedTask.status != 'completed') return false;
-  if (review.selected.isEmpty) return false;
+  if (review.selected.isEmpty && review.goal == null) return false;
   return true;
 }

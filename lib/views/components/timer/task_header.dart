@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ptune/models/my_task.dart';
 import 'package:ptune/views/components/timer/review_flag_chips.dart';
+import 'package:ptune/views/components/timer/goal_input.dart';
 
 class TaskHeader extends StatelessWidget {
   final MyTask? task;
@@ -88,6 +89,9 @@ class TaskHeader extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           ReviewFlagChips(taskId: task!.id),
+
+          const SizedBox(height: 8),
+          GoalInput(taskId: task!.id),
         ],
       ],
     );

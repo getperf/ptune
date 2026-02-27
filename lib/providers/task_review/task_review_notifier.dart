@@ -19,14 +19,23 @@ class TaskReviewNotifier extends StateNotifier<TaskReviewState> {
     state = state.copyWith(selected: next);
   }
 
+  void setGoal(String? value) {
+    final trimmed = (value == null || value.trim().isEmpty)
+        ? null
+        : value.trim();
+    state = state.copyWith(goal: trimmed);
+  }
+
   void clear() {
     logger.d('[TaskReview] clear before=$state');
     state = TaskReviewState.initial();
     logger.d('[TaskReview] clear after=$state');
   }
 
-  /// タスク完了時にレビュー結果を反映
   MyTask applyTo(MyTask task) {
-    return task.copyWith(reviewFlags: state.selected.toList());
+    return task.copyWith(
+      reviewFlags: state.selected.toList(),
+      goal: state.goal,
+    );
   }
 }

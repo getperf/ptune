@@ -76,35 +76,53 @@ class TimerView extends ConsumerWidget {
           },
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            TaskHeader(
-              task: displayTask,
-              parentTask: parentTask,
-              onToggle: displayTask == null
-                  ? null
-                  : () async => await controller.toggleTask(displayTask.id),
-              onGoHome: () => context.go('/home'),
-            ),
-            const SizedBox(height: 16),
-            TimerDisplay(
-              task: displayTask,
-              phase: phase,
-              timerState: timerState,
-              sessionType: sessionType,
-            ),
-            const SizedBox(height: 20),
-            PhaseButton(
-              phase: phase,
-              onStart: controller.start,
-              onPause: controller.pause,
-              onResume: controller.resume,
-              onReset: controller.reset,
-            ),
-          ],
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              /// -------- Header（スクロール対象） --------
+              Flexible(
+                flex: 0,
+                child: SingleChildScrollView(
+                  child: TaskHeader(
+                    task: displayTask,
+                    parentTask: parentTask,
+                    onToggle: displayTask == null
+                        ? null
+                        : () async =>
+                              await controller.toggleTask(displayTask.id),
+                    onGoHome: () => context.go('/home'),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              /// -------- Timer（中央固定） --------
+              Expanded(
+                child: Center(
+                  child: TimerDisplay(
+                    task: displayTask,
+                    phase: phase,
+                    timerState: timerState,
+                    sessionType: sessionType,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              /// -------- PhaseButton（下固定） --------
+              PhaseButton(
+                phase: phase,
+                onStart: controller.start,
+                onPause: controller.pause,
+                onResume: controller.resume,
+                onReset: controller.reset,
+              ),
+            ],
+          ),
         ),
       ),
     );
