@@ -5,7 +5,8 @@ import 'package:ptune/utils/logger.dart';
 
 final taskListCheckProvider =
     NotifierProvider<TaskListCheckNotifier, AsyncValue<bool>>(
-        TaskListCheckNotifier.new);
+      TaskListCheckNotifier.new,
+    );
 
 class TaskListCheckNotifier extends Notifier<AsyncValue<bool>> {
   @override
@@ -23,7 +24,7 @@ class TaskListCheckNotifier extends Notifier<AsyncValue<bool>> {
     try {
       final service = ref.read(taskListServiceProvider);
       final initializer = TaskListInitializer(ref, service);
-      final result = await initializer.checkAndSelectToday();
+      final result = await initializer.checkAndSelectConfiguredTasklist();
       logger.d('[TaskListCheckNotifier] result: $result');
       state = AsyncValue.data(result);
     } catch (e, st) {

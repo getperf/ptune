@@ -21,6 +21,8 @@ import 'package:ptune/services/task_exporter.dart';
 import 'package:ptune/services/task_importer.dart';
 import 'package:ptune/services/task_list_initializer.dart';
 import 'package:ptune/utils/logger.dart';
+import 'package:ptune/utils/env_config.dart';
+
 // handleTaskError
 
 final syncControllerProvider = ChangeNotifierProvider<SyncController>((ref) {
@@ -61,12 +63,12 @@ class SyncController extends ChangeNotifier {
       await local.clearCache();
       final lists = await remote.fetchTaskLists();
       final today =
-          lists.firstWhereOrNull((l) => l.title == defaultTaskListTitle) ??
-              await remote.createTaskList(defaultTaskListTitle);
+          lists.firstWhereOrNull((l) => l.title == EnvConfig.taskListTitle) ??
+          await remote.createTaskList(EnvConfig.taskListTitle);
 
-      ref
-          .read(taskListsProvider.notifier)
-          .setAll({for (final l in lists) l.id: l});
+      ref.read(taskListsProvider.notifier).setAll({
+        for (final l in lists) l.id: l,
+      });
       ref.read(selectedTaskListProvider.notifier).state = today;
       await ref.read(taskListCheckProvider.notifier).check();
 
@@ -112,9 +114,9 @@ class SyncController extends ChangeNotifier {
       notifyListeners();
       await action();
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("完了しました")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("完了しました")));
       }
     } on ApiException catch (e) {
       logger.w("[SyncController] ApiException: $e");
@@ -125,17 +127,17 @@ class SyncController extends ChangeNotifier {
     } on SocketException catch (_) {
       logger.w("[SyncController] Network error (offline)");
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("ネットワークに接続できません")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("ネットワークに接続できません")));
       }
     } catch (e, stack) {
       logger.e("[SyncController] Unexpected error: $e");
       logger.d(stack.toString());
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("サーバーエラーが発生しました")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("サーバーエラーが発生しました")));
       }
     } finally {
       loadingSetter(false);
