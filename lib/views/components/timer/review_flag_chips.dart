@@ -12,18 +12,21 @@ class ReviewFlagChips extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(taskReviewProvider(taskId));
     final notifier = ref.read(taskReviewProvider(taskId).notifier);
+
+    final visibleFlags = ReviewFlag.values
+        .where((f) => f != ReviewFlag.unknown)
+        .toList();
+
     return Wrap(
-      spacing: 6, // ★ 縮小
-      runSpacing: 4, // ★ 縮小
-      children: ReviewFlag.values.map((flag) {
+      spacing: 6,
+      runSpacing: 4,
+      children: visibleFlags.map((flag) {
         final selected = state.selected.contains(flag);
+
         return FilterChip(
-          visualDensity: VisualDensity.compact, // ★ 高さ圧縮
+          visualDensity: VisualDensity.compact,
           labelPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
-          label: Text(
-            _labelOf(flag),
-            style: const TextStyle(fontSize: 16), // ★ フォント縮小
-          ),
+          label: Text(_labelOf(flag), style: const TextStyle(fontSize: 16)),
           selected: selected,
           onSelected: (_) => notifier.toggle(flag),
         );
@@ -45,6 +48,8 @@ class ReviewFlagChips extends ConsumerWidget {
         return '残件あり';
       case ReviewFlag.newIssueFound:
         return '新たな課題';
+      case ReviewFlag.unknown:
+        return '';
     }
   }
 }

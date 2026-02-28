@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$MyTask {
 
- String get id; String get title; String? get tasklistId; String? get note; String? get parent; String? get position; PomodoroInfo? get pomodoro; String get status; List<MyTask> get subTasks; DateTime? get due; DateTime? get started; DateTime? get completed; DateTime? get updated; bool get deleted; List<ReviewFlag> get reviewFlags;// ★ 追加
+ String get id; String get title; String? get tasklistId; String? get note; String? get parent; String? get position; PomodoroInfo? get pomodoro; String get status; List<MyTask> get subTasks; DateTime? get due; DateTime? get started; DateTime? get completed; DateTime? get updated; bool get deleted;@JsonKey(defaultValue: <ReviewFlag>[], unknownEnumValue: ReviewFlag.unknown) List<ReviewFlag> get reviewFlags;// ★ 追加
  String? get goal; List<String> get tags;
 /// Create a copy of MyTask
 /// with the given fields replaced by the non-null parameter values.
@@ -49,7 +49,7 @@ abstract mixin class $MyTaskCopyWith<$Res>  {
   factory $MyTaskCopyWith(MyTask value, $Res Function(MyTask) _then) = _$MyTaskCopyWithImpl;
 @useResult
 $Res call({
- String id, String title, String? tasklistId, String? note, String? parent, String? position, PomodoroInfo? pomodoro, String status, List<MyTask> subTasks, DateTime? due, DateTime? started, DateTime? completed, DateTime? updated, bool deleted, List<ReviewFlag> reviewFlags, String? goal, List<String> tags
+ String id, String title, String? tasklistId, String? note, String? parent, String? position, PomodoroInfo? pomodoro, String status, List<MyTask> subTasks, DateTime? due, DateTime? started, DateTime? completed, DateTime? updated, bool deleted,@JsonKey(defaultValue: <ReviewFlag>[], unknownEnumValue: ReviewFlag.unknown) List<ReviewFlag> reviewFlags, String? goal, List<String> tags
 });
 
 
@@ -182,7 +182,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title,  String? tasklistId,  String? note,  String? parent,  String? position,  PomodoroInfo? pomodoro,  String status,  List<MyTask> subTasks,  DateTime? due,  DateTime? started,  DateTime? completed,  DateTime? updated,  bool deleted,  List<ReviewFlag> reviewFlags,  String? goal,  List<String> tags)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title,  String? tasklistId,  String? note,  String? parent,  String? position,  PomodoroInfo? pomodoro,  String status,  List<MyTask> subTasks,  DateTime? due,  DateTime? started,  DateTime? completed,  DateTime? updated,  bool deleted, @JsonKey(defaultValue: <ReviewFlag>[], unknownEnumValue: ReviewFlag.unknown)  List<ReviewFlag> reviewFlags,  String? goal,  List<String> tags)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _MyTask() when $default != null:
 return $default(_that.id,_that.title,_that.tasklistId,_that.note,_that.parent,_that.position,_that.pomodoro,_that.status,_that.subTasks,_that.due,_that.started,_that.completed,_that.updated,_that.deleted,_that.reviewFlags,_that.goal,_that.tags);case _:
@@ -203,7 +203,7 @@ return $default(_that.id,_that.title,_that.tasklistId,_that.note,_that.parent,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title,  String? tasklistId,  String? note,  String? parent,  String? position,  PomodoroInfo? pomodoro,  String status,  List<MyTask> subTasks,  DateTime? due,  DateTime? started,  DateTime? completed,  DateTime? updated,  bool deleted,  List<ReviewFlag> reviewFlags,  String? goal,  List<String> tags)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title,  String? tasklistId,  String? note,  String? parent,  String? position,  PomodoroInfo? pomodoro,  String status,  List<MyTask> subTasks,  DateTime? due,  DateTime? started,  DateTime? completed,  DateTime? updated,  bool deleted, @JsonKey(defaultValue: <ReviewFlag>[], unknownEnumValue: ReviewFlag.unknown)  List<ReviewFlag> reviewFlags,  String? goal,  List<String> tags)  $default,) {final _that = this;
 switch (_that) {
 case _MyTask():
 return $default(_that.id,_that.title,_that.tasklistId,_that.note,_that.parent,_that.position,_that.pomodoro,_that.status,_that.subTasks,_that.due,_that.started,_that.completed,_that.updated,_that.deleted,_that.reviewFlags,_that.goal,_that.tags);case _:
@@ -223,7 +223,7 @@ return $default(_that.id,_that.title,_that.tasklistId,_that.note,_that.parent,_t
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title,  String? tasklistId,  String? note,  String? parent,  String? position,  PomodoroInfo? pomodoro,  String status,  List<MyTask> subTasks,  DateTime? due,  DateTime? started,  DateTime? completed,  DateTime? updated,  bool deleted,  List<ReviewFlag> reviewFlags,  String? goal,  List<String> tags)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title,  String? tasklistId,  String? note,  String? parent,  String? position,  PomodoroInfo? pomodoro,  String status,  List<MyTask> subTasks,  DateTime? due,  DateTime? started,  DateTime? completed,  DateTime? updated,  bool deleted, @JsonKey(defaultValue: <ReviewFlag>[], unknownEnumValue: ReviewFlag.unknown)  List<ReviewFlag> reviewFlags,  String? goal,  List<String> tags)?  $default,) {final _that = this;
 switch (_that) {
 case _MyTask() when $default != null:
 return $default(_that.id,_that.title,_that.tasklistId,_that.note,_that.parent,_that.position,_that.pomodoro,_that.status,_that.subTasks,_that.due,_that.started,_that.completed,_that.updated,_that.deleted,_that.reviewFlags,_that.goal,_that.tags);case _:
@@ -238,7 +238,7 @@ return $default(_that.id,_that.title,_that.tasklistId,_that.note,_that.parent,_t
 @JsonSerializable()
 
 class _MyTask implements MyTask {
-  const _MyTask({required this.id, required this.title, this.tasklistId, this.note, this.parent, this.position, this.pomodoro, this.status = "needsAction", final  List<MyTask> subTasks = const <MyTask>[], this.due, this.started, this.completed, this.updated, this.deleted = false, final  List<ReviewFlag> reviewFlags = const <ReviewFlag>[], this.goal, final  List<String> tags = const <String>[]}): _subTasks = subTasks,_reviewFlags = reviewFlags,_tags = tags;
+  const _MyTask({required this.id, required this.title, this.tasklistId, this.note, this.parent, this.position, this.pomodoro, this.status = "needsAction", final  List<MyTask> subTasks = const <MyTask>[], this.due, this.started, this.completed, this.updated, this.deleted = false, @JsonKey(defaultValue: <ReviewFlag>[], unknownEnumValue: ReviewFlag.unknown) final  List<ReviewFlag> reviewFlags = const <ReviewFlag>[], this.goal, final  List<String> tags = const <String>[]}): _subTasks = subTasks,_reviewFlags = reviewFlags,_tags = tags;
   factory _MyTask.fromJson(Map<String, dynamic> json) => _$MyTaskFromJson(json);
 
 @override final  String id;
@@ -262,7 +262,7 @@ class _MyTask implements MyTask {
 @override final  DateTime? updated;
 @override@JsonKey() final  bool deleted;
  final  List<ReviewFlag> _reviewFlags;
-@override@JsonKey() List<ReviewFlag> get reviewFlags {
+@override@JsonKey(defaultValue: <ReviewFlag>[], unknownEnumValue: ReviewFlag.unknown) List<ReviewFlag> get reviewFlags {
   if (_reviewFlags is EqualUnmodifiableListView) return _reviewFlags;
   // ignore: implicit_dynamic_type
   return EqualUnmodifiableListView(_reviewFlags);
@@ -311,7 +311,7 @@ abstract mixin class _$MyTaskCopyWith<$Res> implements $MyTaskCopyWith<$Res> {
   factory _$MyTaskCopyWith(_MyTask value, $Res Function(_MyTask) _then) = __$MyTaskCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String title, String? tasklistId, String? note, String? parent, String? position, PomodoroInfo? pomodoro, String status, List<MyTask> subTasks, DateTime? due, DateTime? started, DateTime? completed, DateTime? updated, bool deleted, List<ReviewFlag> reviewFlags, String? goal, List<String> tags
+ String id, String title, String? tasklistId, String? note, String? parent, String? position, PomodoroInfo? pomodoro, String status, List<MyTask> subTasks, DateTime? due, DateTime? started, DateTime? completed, DateTime? updated, bool deleted,@JsonKey(defaultValue: <ReviewFlag>[], unknownEnumValue: ReviewFlag.unknown) List<ReviewFlag> reviewFlags, String? goal, List<String> tags
 });
 
 

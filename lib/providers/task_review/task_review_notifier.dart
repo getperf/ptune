@@ -11,6 +11,13 @@ class TaskReviewNotifier extends StateNotifier<TaskReviewState> {
 
   TaskReviewNotifier(this.taskId) : super(TaskReviewState.initial());
 
+  void initFromTask(MyTask task) {
+    state = TaskReviewState(
+      selected: task.reviewFlags.toSet(),
+      goal: task.goal,
+    );
+  }
+
   void toggle(ReviewFlag flag) {
     final next = Set<ReviewFlag>.from(state.selected);
     if (!next.add(flag)) {

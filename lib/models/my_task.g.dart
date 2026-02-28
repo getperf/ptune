@@ -35,9 +35,15 @@ _MyTask _$MyTaskFromJson(Map<String, dynamic> json) => _MyTask(
   deleted: json['deleted'] as bool? ?? false,
   reviewFlags:
       (json['reviewFlags'] as List<dynamic>?)
-          ?.map((e) => $enumDecode(_$ReviewFlagEnumMap, e))
+          ?.map(
+            (e) => $enumDecode(
+              _$ReviewFlagEnumMap,
+              e,
+              unknownValue: ReviewFlag.unknown,
+            ),
+          )
           .toList() ??
-      const <ReviewFlag>[],
+      [],
   goal: json['goal'] as String?,
   tags:
       (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList() ??
@@ -73,4 +79,5 @@ const _$ReviewFlagEnumMap = {
   ReviewFlag.scopeExpanded: 'scopeExpanded',
   ReviewFlag.unresolved: 'unresolved',
   ReviewFlag.newIssueFound: 'newIssueFound',
+  ReviewFlag.unknown: 'unknown',
 };
