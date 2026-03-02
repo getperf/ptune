@@ -48,7 +48,29 @@ class RemoteTaskService {
         .toList();
 
     logger.i('[RemoteTaskService] fetchTasks: ${tasks.length} 件');
-    return tasks;
+    return sortTasksHierarchically(tasks);
+  }
+
+  List<MyTask> sortTasksHierarchically(List<MyTask> tasks) {
+    final roots = tasks.where((t) => t.parent == null).toList()
+      ..sort((a, b) => (b.position ?? '').compareTo(a.position ?? ''));
+
+    final childrenMap = <String, List<MyTask>>{};
+    for (final t in tasks.where((t) => t.parent != null)) {
+      childrenMap.putIfAbsent(t.parent!, () => []).add(t);
+    }
+
+    for (final list in childrenMap.values) {
+      list.sort((a, b) => (b.position ?? '').compareTo(a.position ?? ''));
+    }
+
+    final result = <MyTask>[];
+    for (final root in roots) {
+      result.add(root);
+      result.addAll(childrenMap[root.id] ?? []);
+    }
+
+    return result;
   }
 
   // =========================

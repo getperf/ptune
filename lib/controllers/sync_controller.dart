@@ -81,6 +81,9 @@ class SyncController extends ChangeNotifier {
   Future<void> importTasks(BuildContext context) async {
     await _withLoading(context, () async {
       final tasks = await taskImporter.importTasks();
+      for (final t in tasks) {
+        logger.i("${t.title} parent=${t.parent} pos=${t.position}");
+      }
       ref.read(tasksProvider.notifier).replaceAll(tasks);
 
       // --- 追加: インポート完了後にタイマー状態をリセット ---
