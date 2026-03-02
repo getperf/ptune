@@ -19,6 +19,15 @@ import 'package:ptune/views/components/timer/timer_display.dart';
 class TimerView extends ConsumerWidget {
   const TimerView({super.key});
 
+  Future<void> _exitToHome(BuildContext context, WidgetRef ref) async {
+    final commitController = TaskReviewCommitController(ref);
+    await commitController.onExitToHome();
+
+    if (context.mounted) {
+      context.go('/home');
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final runningTask = ref.watch(selectedTimerTaskProvider);
@@ -73,14 +82,7 @@ class TimerView extends ConsumerWidget {
         title: const Text('タイマー'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () async {
-            final commitController = TaskReviewCommitController(ref);
-            await commitController.onExitToHome();
-
-            if (context.mounted) {
-              context.pop();
-            }
-          },
+          onPressed: () => _exitToHome(context, ref),
         ),
       ),
       body: SafeArea(
@@ -99,7 +101,7 @@ class TimerView extends ConsumerWidget {
                         ? null
                         : () async =>
                               await controller.toggleTask(displayTask.id),
-                    onGoHome: () => context.go('/home'),
+                    onGoHome: () => _exitToHome(context, ref),
                   ),
                 ),
               ),
