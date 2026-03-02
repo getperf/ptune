@@ -37,7 +37,7 @@ MovePlan planMove(
   final hasChild = allTasks.any((t) => t.parent == task.id);
 
   if (asChild && hasChild) {
-    return const MovePlan(MovePlanKind.error, reason: "子を持つ親タスクはサブタスクにできません");
+    return MovePlan(MovePlanKind.error, reason: "子を持つ親タスクはサブタスクにできません");
   }
 
   // =========================
