@@ -160,7 +160,9 @@ class RemoteTaskService {
     ).replace(queryParameters: queryParams);
 
     final response = await authClient.post(uri);
-
+    if (response.statusCode == 200) {
+      logger.i('[moveTask] result: ${response.body}');
+    }
     if (response.statusCode != 200) {
       _handleErrorResponse(response);
     }

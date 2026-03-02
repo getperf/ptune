@@ -12,12 +12,7 @@ class MovePlan {
   final String? previousId; // null → 親配下 or TOP の先頭
   final String reason;
 
-  const MovePlan(
-    this.kind, {
-    this.parent,
-    this.previousId,
-    this.reason = '',
-  });
+  const MovePlan(this.kind, {this.parent, this.previousId, this.reason = ''});
 }
 
 /// 事前条件の型（必要ならUIで理由表示に使える）
@@ -36,58 +31,57 @@ class MovePrecheck {
 MovePlan planMove(
   List<MyTask> allTasks,
   MyTask task,
-  MyTask? previous,
+  MyTask? uiPrevious,
   bool asChild,
 ) {
   final hasChild = allTasks.any((t) => t.parent == task.id);
 
-  // サブタスク化したいが、taskが親である → エラー
   if (asChild && hasChild) {
-    return MovePlan(
-      MovePlanKind.error,
-      reason: "子を持つ親タスクはサブタスクにできません",
-    );
+    return const MovePlan(MovePlanKind.error, reason: "子を持つ親タスクはサブタスクにできません");
   }
 
-  // サブタスク化
+  // =========================
+  // ① 親決定
+  // =========================
+
+  String? targetParent;
+
   if (asChild) {
-    if (previous!.isParent) {
-      return MovePlan(
-        MovePlanKind.makeSubtask,
-        parent: previous.id,
-        previousId: null,
-        reason: "${previous.title} の子として追加",
-      );
-    } else {
-      return MovePlan(
-        MovePlanKind.makeSubtask,
-        parent: previous.parent,
-        previousId: previous.id,
-        reason: "${previous.title} の下に追加",
-      );
+    if (uiPrevious == null) {
+      return const MovePlan(MovePlanKind.error, reason: "previous が必要です");
     }
+
+    if (uiPrevious.parent == null) {
+      targetParent = uiPrevious.id;
+    } else {
+      targetParent = uiPrevious.parent;
+    }
+  } else {
+    targetParent = uiPrevious?.parent;
   }
 
-  // 親タスクの移動 → トップレベル維持 + 直前が子ならその親を取得
-  if (!asChild && hasChild) {
-    final resolvedPrev = (previous != null && previous.parent != null)
-        ? allTasks.firstWhere((t) => t.id == previous.parent)
-        : previous;
+  // =========================
+  // ② sibling を安全取得
+  // =========================
 
-    return MovePlan(
-      MovePlanKind.unindent,
-      parent: null,
-      previousId: resolvedPrev?.id,
-      reason: "親タスクとして ${resolvedPrev?.title ?? '先頭'} の後ろに移動",
-    );
+  final siblings =
+      allTasks
+          .where((t) => t.parent == targetParent && t.id != task.id)
+          .toList()
+        ..sort((a, b) => (a.position ?? '').compareTo(b.position ?? ''));
+
+  String? safePreviousId;
+
+  if (uiPrevious != null) {
+    final match = siblings.firstWhereOrNull((t) => t.id == uiPrevious.id);
+    safePreviousId = match?.id;
   }
 
-  // 通常の移動（子タスク → 同じ親下で並び替え）
   return MovePlan(
-    MovePlanKind.unindent,
-    parent: previous?.parent,
-    previousId: previous?.id,
-    reason: "兄弟 ${previous?.title} の後ろに移動",
+    asChild ? MovePlanKind.makeSubtask : MovePlanKind.unindent,
+    parent: targetParent,
+    previousId: safePreviousId,
+    reason: "safeMove: parent=$targetParent previous=$safePreviousId",
   );
 }
 
@@ -179,15 +173,13 @@ MovePlan _planMakeSubtask(List<MyTask> sorted, MyTask task) {
 
   final idx = sorted.indexWhere((t) => t.id == task.id);
   if (idx <= 0) {
-    return MovePlan(
-      MovePlanKind.error,
-      reason: '先頭要素はサブタスク化できません（previous不在）',
-    );
+    return MovePlan(MovePlanKind.error, reason: '先頭要素はサブタスク化できません（previous不在）');
   }
 
   final prev = sorted[idx - 1];
-  final parent =
-      (prev.parent == null) ? prev : _getById(sorted, prev.parent!) ?? prev;
+  final parent = (prev.parent == null)
+      ? prev
+      : _getById(sorted, prev.parent!) ?? prev;
 
   final previousSibling = _findPreviousSiblingUnder(
     sorted,
@@ -246,7 +238,7 @@ MovePlan _planUnindent(List<MyTask> sorted, MyTask task) {
 List<MyTask> sortByHierarchyPosition(List<MyTask> flat) {
   // parent == null のタスク（トップレベル）
   final topLevel = flat.where((t) => t.parent == null).toList()
-    ..sort((a, b) => (a.position ?? '').compareTo(b.position ?? ''));
+    ..sort((a, b) => (b.position ?? '').compareTo(a.position ?? ''));
 
   // parentId ごとのサブタスクリストをマップ化（position順）
   final Map<String, List<MyTask>> childrenMap = {};
@@ -256,7 +248,7 @@ List<MyTask> sortByHierarchyPosition(List<MyTask> flat) {
     }
   }
   for (final list in childrenMap.values) {
-    list.sort((a, b) => (a.position ?? '').compareTo(b.position ?? ''));
+    list.sort((a, b) => (b.position ?? '').compareTo(a.position ?? ''));
   }
 
   // 階層順にフラット化
