@@ -1,29 +1,19 @@
 import 'package:ptune/models/my_task.dart';
 import 'package:ptune/utils/logger.dart';
+import 'package:ptune/utils/task_hierarchy.dart';
 
 void printTasks(List<MyTask> tasks) {
-  // マップ化：親ID → サブタスク一覧
-  final Map<String, List<MyTask>> subtasksMap = {};
-  for (final t in tasks) {
-    if (t.parent != null) {
-      subtasksMap.putIfAbsent(t.parent!, () => []).add(t);
-    }
-  }
+  final sorted = sortByHierarchyPosition(tasks);
 
-  // トップレベルタスクを position順にソート
-  final topLevelTasks = tasks.where((t) => t.parent == null).toList()
-    ..sort((a, b) => (a.position ?? '').compareTo(b.position ?? ''));
+  logger.i('=== Task List (position sorted ASC) ===');
 
-  logger.i('=== Task List (position sorted) ===');
+  for (final task in sorted) {
+    if (task.parent == null) {
+      logger.i('[${task.id}] ${task.title} (pos: ${task.position})');
 
-  for (final task in topLevelTasks) {
-    logger.i('[${task.id}] ${task.title} (pos: ${task.position})');
+      final children = sorted.where((t) => t.parent == task.id).toList();
 
-    // サブタスクがあれば表示
-    final subs = subtasksMap[task.id];
-    if (subs != null && subs.isNotEmpty) {
-      subs.sort((a, b) => (a.position ?? '').compareTo(b.position ?? ''));
-      for (final sub in subs) {
+      for (final sub in children) {
         logger.i('  └─ [${sub.id}] ${sub.title} (pos: ${sub.position})');
       }
     }

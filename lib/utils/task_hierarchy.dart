@@ -12,12 +12,7 @@ class MovePlan {
   final String? previousId; // null → 親配下 or TOP の先頭
   final String reason;
 
-  const MovePlan(
-    this.kind, {
-    this.parent,
-    this.previousId,
-    this.reason = '',
-  });
+  const MovePlan(this.kind, {this.parent, this.previousId, this.reason = ''});
 }
 
 /// 事前条件の型（必要ならUIで理由表示に使える）
@@ -43,10 +38,7 @@ MovePlan planMove(
 
   // サブタスク化したいが、taskが親である → エラー
   if (asChild && hasChild) {
-    return MovePlan(
-      MovePlanKind.error,
-      reason: "子を持つ親タスクはサブタスクにできません",
-    );
+    return MovePlan(MovePlanKind.error, reason: "子を持つ親タスクはサブタスクにできません");
   }
 
   // サブタスク化
@@ -179,15 +171,13 @@ MovePlan _planMakeSubtask(List<MyTask> sorted, MyTask task) {
 
   final idx = sorted.indexWhere((t) => t.id == task.id);
   if (idx <= 0) {
-    return MovePlan(
-      MovePlanKind.error,
-      reason: '先頭要素はサブタスク化できません（previous不在）',
-    );
+    return MovePlan(MovePlanKind.error, reason: '先頭要素はサブタスク化できません（previous不在）');
   }
 
   final prev = sorted[idx - 1];
-  final parent =
-      (prev.parent == null) ? prev : _getById(sorted, prev.parent!) ?? prev;
+  final parent = (prev.parent == null)
+      ? prev
+      : _getById(sorted, prev.parent!) ?? prev;
 
   final previousSibling = _findPreviousSiblingUnder(
     sorted,
@@ -246,7 +236,7 @@ MovePlan _planUnindent(List<MyTask> sorted, MyTask task) {
 List<MyTask> sortByHierarchyPosition(List<MyTask> flat) {
   // parent == null のタスク（トップレベル）
   final topLevel = flat.where((t) => t.parent == null).toList()
-    ..sort((a, b) => (a.position ?? '').compareTo(b.position ?? ''));
+    ..sort((a, b) => (b.position ?? '').compareTo(a.position ?? ''));
 
   // parentId ごとのサブタスクリストをマップ化（position順）
   final Map<String, List<MyTask>> childrenMap = {};
@@ -256,7 +246,7 @@ List<MyTask> sortByHierarchyPosition(List<MyTask> flat) {
     }
   }
   for (final list in childrenMap.values) {
-    list.sort((a, b) => (a.position ?? '').compareTo(b.position ?? ''));
+    list.sort((a, b) => (b.position ?? '').compareTo(a.position ?? ''));
   }
 
   // 階層順にフラット化

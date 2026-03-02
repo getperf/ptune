@@ -8,6 +8,7 @@ import 'package:ptune/providers/remote_task_service_provider.dart';
 import 'package:ptune/providers/task_collection.dart';
 import 'package:ptune/services/common_task_service.dart';
 import 'package:ptune/utils/env_config.dart';
+import 'package:ptune/utils/task_hierarchy.dart';
 import '../models/my_task.dart';
 import '../models/my_task_ext.dart';
 import '../services/task_service_interface.dart';
@@ -35,9 +36,9 @@ final selectedTimerTaskProvider = StateProvider<MyTask?>((ref) => null);
 /// Notifier Provider
 final tasksProvider =
     StateNotifierProvider<TasksNotifier, AsyncValue<List<MyTask>>>((ref) {
-  final service = ref.watch(taskServiceProvider);
-  return TasksNotifier(service);
-});
+      final service = ref.watch(taskServiceProvider);
+      return TasksNotifier(service);
+    });
 
 /// タスク一覧の管理
 class TasksNotifier extends StateNotifier<AsyncValue<List<MyTask>>> {
@@ -50,10 +51,12 @@ class TasksNotifier extends StateNotifier<AsyncValue<List<MyTask>>> {
   Future<void> _loadTasks() async {
     try {
       final tasks = await taskService.fetchTasks();
-      state = AsyncValue.data(tasks);
-      logger.i("[TasksNotifier] loaded ${tasks.length} tasks");
+
+      final sorted = sortByHierarchyPosition(tasks);
+
+      state = AsyncValue.data(sorted);
+      logger.i("[TasksNotifier] loaded ${sorted.length} tasks (sorted)");
     } on ApiException catch (e, st) {
-      // ApiExceptionはAsyncErrorに流す
       state = AsyncValue.error(e, st);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -71,22 +74,25 @@ class TasksNotifier extends StateNotifier<AsyncValue<List<MyTask>>> {
       await taskService.saveTask(updated);
     }
     logger.d(
-        "[TasksNotifier] updateTask: ${updated.id} → ${updated.title}, commit=$commit");
+      "[TasksNotifier] updateTask: ${updated.id} → ${updated.title}, commit=$commit",
+    );
   }
 
   Future<void> updateTasks(List<MyTask> tasks) async {
     try {
-      state = AsyncValue.data(tasks);
-      await taskService.saveTasks(tasks);
-      logger.i("[TasksNotifier] updateTasks: ${tasks.length} tasks");
+      final sorted = sortByHierarchyPosition(tasks);
+      state = AsyncValue.data(sorted);
+      await taskService.saveTasks(sorted);
+      logger.i("[TasksNotifier] updateTasks: ${sorted.length} tasks");
     } on ApiException catch (e, st) {
       state = AsyncValue.error(e, st);
     }
   }
 
   void replaceAll(List<MyTask> tasks) {
-    state = AsyncValue.data(tasks);
-    logger.i("[TasksNotifier] replaceAll: ${tasks.length} tasks");
+    final sorted = sortByHierarchyPosition(tasks);
+    state = AsyncValue.data(sorted);
+    logger.i("[TasksNotifier] replaceAll: ${sorted.length} tasks (sorted)");
   }
 
   MyTask? findById(String id) {
@@ -110,7 +116,9 @@ class TasksNotifier extends StateNotifier<AsyncValue<List<MyTask>>> {
 
     final updatedList = [...current];
     updatedList[index] = updated;
-    state = AsyncValue.data(updatedList);
+
+    final sorted = sortByHierarchyPosition(updatedList);
+    state = AsyncValue.data(sorted);
 
     try {
       await taskService.saveTask(updated);
@@ -136,17 +144,17 @@ void handleTaskError(BuildContext context, Object error) {
         message = "エラーが発生しました (${error.statusCode}): ${error.message}";
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     } else {
       // 通知不要（オフライン/サーバ障害など）
       logger.w("Suppressed error: $error");
     }
   } else {
     logger.e("Unexpected error: $error");
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("不明なエラーが発生しました。")),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text("不明なエラーが発生しました。")));
   }
 }
