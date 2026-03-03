@@ -2,30 +2,40 @@ import 'dart:io' show Platform;
 import 'package:flutter/services.dart';
 import '../states/haptic_setting.dart';
 import 'haptic_service.dart';
+import 'package:ptune/utils/logger.dart';
 
 class FlutterHapticService implements HapticService {
   @override
   Future<void> test(HapticSetting setting) async {
-    // Offなら何もしない
+    logger.i("[HAPTIC] test called: $setting");
+
     if (!setting.isEnabled) return;
 
-    // モバイル以外は何もしない（Windows等）
     if (!Platform.isAndroid && !Platform.isIOS) {
+      logger.i("[HAPTIC] skipped (not mobile)");
       return;
     }
 
+    logger.i("[HAPTIC] triggering vibration");
+
     switch (setting) {
-      case HapticSetting.off:
-        return;
       case HapticSetting.light:
         await HapticFeedback.lightImpact();
         break;
       case HapticSetting.medium:
         await HapticFeedback.mediumImpact();
+        await Future.delayed(const Duration(milliseconds: 120));
+        await HapticFeedback.mediumImpact();
         break;
       case HapticSetting.heavy:
         await HapticFeedback.heavyImpact();
+        await Future.delayed(const Duration(milliseconds: 120));
+        await HapticFeedback.heavyImpact();
+        await Future.delayed(const Duration(milliseconds: 120));
+        await HapticFeedback.heavyImpact();
         break;
+      case HapticSetting.off:
+        return;
     }
   }
 }
