@@ -15,6 +15,7 @@ import 'package:ptune/models/pomodoro_session.dart';
 import 'package:ptune/models/session_type.dart';
 import 'package:ptune/providers/pomodoro_scheduler_provider.dart';
 import 'package:ptune/providers/pomodoro_summary_provider.dart';
+import 'package:ptune/providers/timer_notification_service_provider.dart';
 import 'package:ptune/providers/task_provider.dart';
 import 'package:ptune/states/auto_mode_state.dart';
 import 'package:ptune/states/remaining_time_state.dart';
@@ -157,8 +158,15 @@ class TimerController {
 
   /// セッション完了時に呼ばれる処理
   Future<void> _onSessionComplete() async {
-    // ★ await 漏れ修正
+    final currentType = ref.read(sessionTypeProvider);
+
+    // ① セッション確定処理
     await _finalizeSessionAndApply();
+
+    // ② 通知（WORKのみ内部で判定）
+    await ref
+        .read(timerNotificationServiceProvider)
+        .onSessionCompleted(currentType);
 
     final guard = AutoSafeGuard(
       controller: this,

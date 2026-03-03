@@ -81,13 +81,11 @@ class HomeController {
 
   Future<void> submitTask(String title, String label) async {
     final list = ref.read(selectedTaskListProvider);
-
     if (list == null || list.id.isEmpty) {
       _notifyUser('タスクリストが未選択です');
       return;
     }
 
-    // --- 変換ロジック ---
     final planned = _extractPlanned(label);
     final isBlocked = label.contains('🚫');
     final finalTitle = isBlocked ? '$title🚫' : title;
@@ -105,16 +103,19 @@ class HomeController {
     final tasks = asyncTasks.value ?? [];
 
     try {
+      // ① 追加位置を決定
       final plan = planInsertLast(tasks);
+
+      // ② create（position は null）
       final newTask = await taskService.addTask(task);
 
+      // ③ ★必須★ move で position を確定
       await moveTaskApi(
         newTask.id,
-        previousId: plan.previousId,
         parentId: plan.parent,
+        previousId: plan.previousId,
       );
 
-      logger.i("[HomeController] submitTask $newTask");
       ref.invalidate(tasksProvider);
     } catch (e, st) {
       logger.e('[HomeController] submitTask failed', error: e, stackTrace: st);

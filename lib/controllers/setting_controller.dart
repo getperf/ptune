@@ -1,6 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ptune/states/auto_mode_state.dart';
 import 'package:ptune/states/theme_mode_provider.dart';
+import 'package:ptune/states/haptic_setting.dart';
+import 'package:ptune/states/haptic_setting_provider.dart';
+import 'package:ptune/providers/haptic_service_provider.dart';
 import 'package:ptune/utils/log_exporter.dart';
 import 'package:ptune/utils/logger.dart';
 
@@ -55,4 +58,16 @@ class SettingsController {
 
   bool get isAutoEnabled => autoMode.isAutoEnabled;
   bool get isSafeEnabled => autoMode.isSafeEnabled;
+
+  HapticSetting get hapticSetting => ref.read(hapticSettingProvider);
+
+  Future<void> setHapticSetting(HapticSetting setting) async {
+    ref.read(hapticSettingProvider.notifier).state = setting;
+    logger.i("[SettingsController] setHapticSetting → $setting");
+
+    // Off以外ならテスト振動
+    if (setting.isEnabled) {
+      await ref.read(hapticServiceProvider).test(setting);
+    }
+  }
 }

@@ -20,14 +20,23 @@ class TaskTile extends ConsumerWidget {
       onTap: () => controller.onTaskTapped(task),
       child: Padding(
         padding: EdgeInsets.only(
-            left: row.depth * 16.0, right: 12, top: 1, bottom: 1),
+          left: row.depth * 16.0,
+          right: 12,
+          top: 1,
+          bottom: 1,
+        ),
         child: Row(
           children: [
             IconButton(
-              icon: Icon(task.status == "completed"
-                  ? Icons.check_box
-                  : Icons.check_box_outline_blank),
-              onPressed: () => controller.toggleTask(task.id),
+              icon: Icon(
+                task.status == "completed"
+                    ? Icons.check_box
+                    : Icons.check_box_outline_blank,
+              ),
+              // 編集モードでは完了トグルを無効化
+              onPressed: isFormVisible
+                  ? null
+                  : () => controller.toggleTask(task.id),
             ),
             Expanded(
               child: Text(
@@ -58,9 +67,11 @@ class TaskTile extends ConsumerWidget {
               IconButton(
                 iconSize: 32,
                 constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                icon: Icon(task.parent == null
-                    ? Icons.chevron_right
-                    : Icons.chevron_left),
+                icon: Icon(
+                  task.parent == null
+                      ? Icons.chevron_right
+                      : Icons.chevron_left,
+                ),
                 tooltip: task.parent == null ? 'サブタスク化' : 'サブタスク解除',
                 onPressed: () => controller.toggleSubtask(task),
               ),
