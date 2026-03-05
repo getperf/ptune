@@ -5,14 +5,11 @@ import 'package:ptune/models/my_task.dart';
 import 'package:ptune/models/pomodoro_info.dart';
 import 'package:ptune/models/timer_phase.dart';
 import 'package:ptune/providers/is_online_provider.dart';
-import 'package:ptune/providers/task_factory_provider.dart';
 import 'package:ptune/providers/task_list_provider.dart';
 import 'package:ptune/providers/timer_controller_provider.dart';
 import 'package:ptune/services/common_task_service.dart';
 import 'package:ptune/services/task_order_service.dart';
 import 'package:ptune/states/timer_phase_state.dart';
-import 'package:ptune/utils/print_tasks.dart';
-import 'package:ptune/utils/task_hierarchy.dart';
 import 'package:ptune/views/edit_task_view.dart';
 import 'package:ptune/providers/task_provider.dart';
 import 'package:ptune/utils/logger.dart';
@@ -131,31 +128,41 @@ class HomeController {
     }
   }
 
-  Future<void> moveTask(MyTask task, MyTask? previous, bool asChild) async {
-    final asyncTasks = ref.read(tasksProvider);
-    final tasks = asyncTasks.value ?? [];
-
-    logger.i(
-      "[moveTask] move ${task.id}, previous: ${previous?.id}, asChild: $asChild",
-    );
-
-    final plan = planMove(tasks, task, previous, asChild);
-
-    if (plan.kind == MovePlanKind.error) {
-      _notifyUser(plan.reason);
-      return;
-    }
+  Future<void> moveTask(MyTask task, MyTask? previousTask, bool asChild) async {
+    final notifier = ref.read(tasksProvider.notifier);
+    final service = ref.read(taskServiceProvider);
 
     try {
-      await moveTaskApi(
+      String? parentId;
+      String? previousId;
+
+      if (asChild) {
+        /// 子として追加
+        parentId = previousTask?.id;
+        previousId = null;
+      } else {
+        /// 同レベル移動
+        parentId = previousTask?.parent;
+        previousId = previousTask?.id;
+      }
+
+      await service.moveTask(
         task.id,
-        previousId: plan.previousId,
-        parentId: plan.parent,
+        parentId: parentId,
+        previousId: previousId,
       );
-      printTasks(tasks);
-    } catch (e, st) {
-      logger.e('[HomeController] moveTask failed', error: e, stackTrace: st);
-      if (context.mounted) handleTaskError(context, e);
+
+      if (service is CommonTaskService) {
+        service.forceRemoteNextFetch();
+      }
+
+      final refreshed = await service.fetchTasks();
+
+      notifier.replaceAll(refreshed);
+
+      logger.i("[move] ${task.title} parent=$parentId prev=$previousId");
+    } catch (e) {
+      logger.e("[move] failed: $e");
     }
   }
 
