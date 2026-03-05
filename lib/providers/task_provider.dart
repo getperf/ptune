@@ -79,7 +79,7 @@ class TasksNotifier extends StateNotifier<AsyncValue<List<MyTask>>> {
         previousId: plan.previous,
       );
 
-      /// ★ remote fetch を強制
+      /// remote fetch を強制
       if (taskService is CommonTaskService) {
         (taskService as CommonTaskService).forceRemoteNextFetch();
       }
