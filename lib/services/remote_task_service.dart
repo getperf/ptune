@@ -48,38 +48,38 @@ class RemoteTaskService {
         .toList();
 
     logger.i('[RemoteTaskService] fetchTasks: ${tasks.length} 件');
-    return sortTasksHierarchically(tasks);
+    return tasks;
   }
 
-  List<MyTask> sortTasksHierarchically(List<MyTask> tasks) {
-    final roots = tasks.where((t) => t.parent == null).toList()
-      ..sort((a, b) => (a.position ?? '').compareTo(b.position ?? ''));
+  // List<MyTask> sortTasksHierarchically(List<MyTask> tasks) {
+  //   final roots = tasks.where((t) => t.parent == null).toList()
+  //     ..sort((a, b) => (a.position ?? '').compareTo(b.position ?? ''));
 
-    final childrenMap = <String, List<MyTask>>{};
-    for (final t in tasks.where((t) => t.parent != null)) {
-      childrenMap.putIfAbsent(t.parent!, () => []).add(t);
-    }
+  //   final childrenMap = <String, List<MyTask>>{};
+  //   for (final t in tasks.where((t) => t.parent != null)) {
+  //     childrenMap.putIfAbsent(t.parent!, () => []).add(t);
+  //   }
 
-    for (final list in childrenMap.values) {
-      list.sort((a, b) => (a.position ?? '').compareTo(b.position ?? ''));
-    }
+  //   for (final list in childrenMap.values) {
+  //     list.sort((a, b) => (a.position ?? '').compareTo(b.position ?? ''));
+  //   }
 
-    final result = <MyTask>[];
+  //   final result = <MyTask>[];
 
-    for (final root in roots) {
-      result.add(root);
+  //   for (final root in roots) {
+  //     result.add(root);
 
-      final children = childrenMap[root.id] ?? [];
-      result.addAll(children);
-    }
+  //     final children = childrenMap[root.id] ?? [];
+  //     result.addAll(children);
+  //   }
 
-    logger.i("[RemoteTaskService] sorted order:");
-    for (final t in result) {
-      logger.i("${t.title} pos=${t.position}");
-    }
+  //   logger.i("[RemoteTaskService] sorted order:");
+  //   for (final t in result) {
+  //     logger.i("${t.title} pos=${t.position}");
+  //   }
 
-    return result;
-  }
+  //   return result;
+  // }
 
   // =========================
   // 更新

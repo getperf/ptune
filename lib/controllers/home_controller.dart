@@ -9,6 +9,7 @@ import 'package:ptune/providers/task_factory_provider.dart';
 import 'package:ptune/providers/task_list_provider.dart';
 import 'package:ptune/providers/timer_controller_provider.dart';
 import 'package:ptune/services/common_task_service.dart';
+import 'package:ptune/services/task_order_service.dart';
 import 'package:ptune/states/timer_phase_state.dart';
 import 'package:ptune/utils/print_tasks.dart';
 import 'package:ptune/utils/task_hierarchy.dart';
@@ -103,19 +104,22 @@ class HomeController {
     final tasks = asyncTasks.value ?? [];
 
     try {
-      // ① 追加位置を決定
-      final plan = planInsertLast(tasks);
+      final order = TaskOrderService();
 
-      // ② create（position は null）
-      final newTask = await taskService.addTask(task);
+      // ① 追加位置計算
+      final plan = order.planAdd(tasks);
 
-      // ③ ★必須★ move で position を確定
-      await moveTaskApi(
-        newTask.id,
+      // ② create
+      final created = await taskService.addTask(task);
+
+      // ③ move
+      await taskService.moveTask(
+        created.id,
         parentId: plan.parent,
-        previousId: plan.previousId,
+        previousId: plan.previous,
       );
 
+      // ④ refresh
       ref.invalidate(tasksProvider);
     } catch (e, st) {
       logger.e('[HomeController] submitTask failed', error: e, stackTrace: st);
