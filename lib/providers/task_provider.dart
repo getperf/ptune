@@ -55,9 +55,43 @@ class TasksNotifier extends StateNotifier<AsyncValue<List<MyTask>>> {
       final sorted = TaskOrderService.normalizeForUi(tasks);
 
       state = AsyncValue.data(sorted);
+
       logger.i("[TasksNotifier] loaded ${sorted.length} tasks (sorted)");
-    } on ApiException catch (e, st) {
+    } catch (e, st) {
       state = AsyncValue.error(e, st);
+    }
+  }
+
+  Future<void> submitAdd(MyTask task) async {
+    try {
+      final current = state.value ?? [];
+
+      /// ① 追加位置計算
+      final plan = TaskOrderService().planAdd(current);
+
+      /// ② create
+      final created = await taskService.addTask(task);
+
+      /// ③ move
+      await taskService.moveTask(
+        created.id,
+        parentId: plan.parent,
+        previousId: plan.previous,
+      );
+
+      /// ★ remote fetch を強制
+      if (taskService is CommonTaskService) {
+        (taskService as CommonTaskService).forceRemoteNextFetch();
+      }
+
+      /// ④ fetch (position確定)
+      final tasks = await taskService.fetchTasks();
+
+      final sorted = TaskOrderService.normalizeForUi(tasks);
+
+      state = AsyncValue.data(sorted);
+
+      logger.i("[TasksNotifier] submitAdd: ${created.title}");
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }

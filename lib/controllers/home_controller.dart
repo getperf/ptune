@@ -99,26 +99,8 @@ class HomeController {
       pomodoro: PomodoroInfo(planned: planned),
     );
 
-    final taskService = ref.read(taskServiceProvider);
-    final asyncTasks = ref.read(tasksProvider);
-    final tasks = asyncTasks.value ?? [];
-
     try {
-      final order = TaskOrderService();
-
-      // ① 追加位置計算
-      final plan = order.planAdd(tasks);
-
-      // ② create
-      final created = await taskService.addTask(task);
-
-      // ③ move
-      await taskService.moveTask(
-        created.id,
-        parentId: plan.parent,
-        previousId: plan.previous,
-      );
-
+      await ref.read(tasksProvider.notifier).submitAdd(task);
       // ④ refresh
       ref.invalidate(tasksProvider);
     } catch (e, st) {
@@ -200,30 +182,40 @@ class HomeController {
   }
 
   Future<void> toggleSubtask(MyTask task) async {
-    final asyncTasks = ref.read(tasksProvider);
-    final tasks = asyncTasks.value ?? [];
+    final notifier = ref.read(tasksProvider.notifier);
+    final service = ref.read(taskServiceProvider);
 
-    final plan = planToggleMove(tasks, task);
+    final tasks = notifier.state.value ?? [];
 
-    if (plan.kind == MovePlanKind.error) {
-      _notifyUser(plan.reason);
+    final orderService = TaskOrderService();
+
+    final plan = orderService.planToggle(tasks: tasks, task: task);
+
+    if (plan.type == MovePlanType.error) {
+      logger.w("[toggle] rejected: ${plan.reason}");
       return;
     }
 
     try {
-      await moveTaskApi(
+      await service.moveTask(
         task.id,
         parentId: plan.parent,
-        previousId: plan.previousId,
+        previousId: plan.previous,
       );
-      printTasks(tasks);
-    } catch (e, st) {
-      logger.e(
-        '[HomeController] toggleSubtask failed',
-        error: e,
-        stackTrace: st,
+
+      if (service is CommonTaskService) {
+        service.forceRemoteNextFetch();
+      }
+
+      final refreshed = await service.fetchTasks();
+
+      notifier.replaceAll(refreshed);
+
+      logger.i(
+        "[toggle] ${task.title} parent=${plan.parent} prev=${plan.previous}",
       );
-      if (context.mounted) handleTaskError(context, e);
+    } catch (e) {
+      logger.e("[toggle] failed: $e");
     }
   }
 

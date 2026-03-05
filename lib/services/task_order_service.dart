@@ -1,5 +1,7 @@
 // lib/services/task_order_service.dart
 
+import 'package:ptune/utils/logger.dart';
+
 import '../models/my_task.dart';
 
 enum MovePlanType { add, move, indent, unindent, error }
@@ -149,8 +151,13 @@ class TaskOrderService {
     final copy = [...tasks];
 
     copy.sort((a, b) {
-      final ap = a.position ?? '';
-      final bp = b.position ?? '';
+      final ap = a.position;
+      final bp = b.position;
+
+      if (ap == null && bp == null) return 0;
+      if (ap == null) return 1; // null は最後
+      if (bp == null) return -1;
+
       return ap.compareTo(bp);
     });
 
@@ -178,6 +185,11 @@ class TaskOrderService {
       if (c != null) {
         result.addAll(c);
       }
+    }
+
+    logger.i("=== NORMALIZE RESULT ===");
+    for (final t in result) {
+      logger.i("${t.title} pos=${t.position}");
     }
 
     return result;

@@ -44,13 +44,19 @@ class RemoteTaskService {
 
     final data = jsonDecode(response.body);
     final tasks = (data['items'] as List<dynamic>? ?? [])
-        .map((json) => taskFactory.fromApiData(json, taskListId: taskListId))
+        .map((json) => taskFactory.fromApiData(json))
         .toList();
 
-    logger.i('[RemoteTaskService] fetchTasks: ${tasks.length} 件');
+    logger.i("=== FETCH ORDER (API) ===");
+
+    for (final t in tasks) {
+      logger.i("${t.title} parent=${t.parent} pos=${t.position}");
+    }
+
+    logger.i("=== END FETCH ORDER ===");
+
     return tasks;
   }
-
   // List<MyTask> sortTasksHierarchically(List<MyTask> tasks) {
   //   final roots = tasks.where((t) => t.parent == null).toList()
   //     ..sort((a, b) => (a.position ?? '').compareTo(b.position ?? ''));
