@@ -1,6 +1,7 @@
 import 'package:ptune/models/my_task.dart';
 import 'package:ptune/services/local_task_service.dart';
 import 'package:ptune/services/remote_task_service.dart';
+import 'package:ptune/utils/logger.dart';
 
 class TaskImporter {
   final RemoteTaskService remoteService;
@@ -10,6 +11,11 @@ class TaskImporter {
 
   Future<List<MyTask>> importTasks() async {
     final tasks = await remoteService.fetchTasks();
+
+    for (final t in tasks) {
+      logger.i("[TaskImporter] ${t.title} pos=${t.position}");
+    }
+
     await localService.saveTasks(tasks);
     return tasks;
   }

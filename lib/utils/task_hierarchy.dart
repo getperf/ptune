@@ -192,7 +192,7 @@ bool _hasChildren(List<MyTask> allTasks, MyTask parent) =>
 List<MyTask> sortByHierarchyPosition(List<MyTask> flat) {
   // parent == null のタスク（トップレベル）
   final topLevel = flat.where((t) => t.parent == null).toList()
-    ..sort((a, b) => (b.position ?? '').compareTo(a.position ?? ''));
+    ..sort((a, b) => (a.position ?? '').compareTo(b.position ?? ''));
 
   // parentId ごとのサブタスク
   final Map<String, List<MyTask>> childrenMap = {};
@@ -202,7 +202,7 @@ List<MyTask> sortByHierarchyPosition(List<MyTask> flat) {
     }
   }
   for (final list in childrenMap.values) {
-    list.sort((a, b) => (b.position ?? '').compareTo(a.position ?? ''));
+    list.sort((a, b) => (a.position ?? '').compareTo(b.position ?? ''));
   }
 
   // 階層順にフラット化

@@ -7,8 +7,8 @@ import 'package:ptune/providers/local_task_service_provider.dart';
 import 'package:ptune/providers/remote_task_service_provider.dart';
 import 'package:ptune/providers/task_collection.dart';
 import 'package:ptune/services/common_task_service.dart';
+import 'package:ptune/services/task_order_service.dart';
 import 'package:ptune/utils/env_config.dart';
-import 'package:ptune/utils/task_hierarchy.dart';
 import '../models/my_task.dart';
 import '../models/my_task_ext.dart';
 import '../services/task_service_interface.dart';
@@ -52,7 +52,7 @@ class TasksNotifier extends StateNotifier<AsyncValue<List<MyTask>>> {
     try {
       final tasks = await taskService.fetchTasks();
 
-      final sorted = sortByHierarchyPosition(tasks);
+      final sorted = TaskOrderService.normalizeForUi(tasks);
 
       state = AsyncValue.data(sorted);
       logger.i("[TasksNotifier] loaded ${sorted.length} tasks (sorted)");
@@ -80,7 +80,7 @@ class TasksNotifier extends StateNotifier<AsyncValue<List<MyTask>>> {
 
   Future<void> updateTasks(List<MyTask> tasks) async {
     try {
-      final sorted = sortByHierarchyPosition(tasks);
+      final sorted = TaskOrderService.normalizeForUi(tasks);
       state = AsyncValue.data(sorted);
       await taskService.saveTasks(sorted);
       logger.i("[TasksNotifier] updateTasks: ${sorted.length} tasks");
@@ -90,7 +90,7 @@ class TasksNotifier extends StateNotifier<AsyncValue<List<MyTask>>> {
   }
 
   void replaceAll(List<MyTask> tasks) {
-    final sorted = sortByHierarchyPosition(tasks);
+    final sorted = TaskOrderService.normalizeForUi(tasks);
     state = AsyncValue.data(sorted);
     logger.i("[TasksNotifier] replaceAll: ${sorted.length} tasks (sorted)");
   }
@@ -117,7 +117,7 @@ class TasksNotifier extends StateNotifier<AsyncValue<List<MyTask>>> {
     final updatedList = [...current];
     updatedList[index] = updated;
 
-    final sorted = sortByHierarchyPosition(updatedList);
+    final sorted = TaskOrderService.normalizeForUi(updatedList);
     state = AsyncValue.data(sorted);
 
     try {

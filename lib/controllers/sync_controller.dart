@@ -82,7 +82,9 @@ class SyncController extends ChangeNotifier {
     await _withLoading(context, () async {
       final tasks = await taskImporter.importTasks();
       for (final t in tasks) {
-        logger.i("${t.title} parent=${t.parent} pos=${t.position}");
+        logger.i(
+          "[SyncController] loaded ${t.title} parent=${t.parent} pos=${t.position}",
+        );
       }
       ref.read(tasksProvider.notifier).replaceAll(tasks);
 

@@ -1,23 +1,22 @@
 import 'package:ptune/models/my_task.dart';
 import 'package:ptune/utils/logger.dart';
-import 'package:ptune/utils/task_hierarchy.dart';
+
+import 'package:ptune/services/task_order_service.dart';
 
 void printTasks(List<MyTask> tasks) {
-  final sorted = sortByHierarchyPosition(tasks);
+  final sorted = TaskOrderService.normalizeForUi(tasks);
 
-  logger.i('=== Task List (position sorted ASC) ===');
+  logger.i('=== Task List ===');
 
   for (final task in sorted) {
     if (task.parent == null) {
-      logger.i('[${task.id}] ${task.title} (pos: ${task.position})');
+      logger.i('[${task.id}] ${task.title} (pos:${task.position})');
 
-      final children = sorted.where((t) => t.parent == task.id).toList();
+      final children = TaskOrderService.siblings(tasks, task.id);
 
       for (final sub in children) {
-        logger.i('  └─ [${sub.id}] ${sub.title} (pos: ${sub.position})');
+        logger.i('  └─ ${sub.title}');
       }
     }
   }
-
-  logger.i('=== End of Task List ===');
 }

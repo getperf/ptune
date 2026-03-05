@@ -53,7 +53,7 @@ class RemoteTaskService {
 
   List<MyTask> sortTasksHierarchically(List<MyTask> tasks) {
     final roots = tasks.where((t) => t.parent == null).toList()
-      ..sort((a, b) => (b.position ?? '').compareTo(a.position ?? ''));
+      ..sort((a, b) => (a.position ?? '').compareTo(b.position ?? ''));
 
     final childrenMap = <String, List<MyTask>>{};
     for (final t in tasks.where((t) => t.parent != null)) {
@@ -61,13 +61,21 @@ class RemoteTaskService {
     }
 
     for (final list in childrenMap.values) {
-      list.sort((a, b) => (b.position ?? '').compareTo(a.position ?? ''));
+      list.sort((a, b) => (a.position ?? '').compareTo(b.position ?? ''));
     }
 
     final result = <MyTask>[];
+
     for (final root in roots) {
       result.add(root);
-      result.addAll(childrenMap[root.id] ?? []);
+
+      final children = childrenMap[root.id] ?? [];
+      result.addAll(children);
+    }
+
+    logger.i("[RemoteTaskService] sorted order:");
+    for (final t in result) {
+      logger.i("${t.title} pos=${t.position}");
     }
 
     return result;
