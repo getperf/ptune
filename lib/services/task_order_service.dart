@@ -1,5 +1,3 @@
-// lib/services/task_order_service.dart
-
 import 'package:ptune/utils/logger.dart';
 
 import '../models/my_task.dart';
@@ -27,15 +25,55 @@ class MovePlan {
 
 class TaskOrderService {
   /// -----------------------------
+  /// normalize (UI表示順)
+  /// -----------------------------
+  static List<MyTask> normalizeForUi(List<MyTask> tasks) {
+    final sorted = [...tasks];
+
+    sorted.sort((a, b) {
+      final ap = a.position;
+      final bp = b.position;
+
+      if (ap == null && bp == null) return 0;
+      if (ap == null) return 1;
+      if (bp == null) return -1;
+
+      return ap.compareTo(bp);
+    });
+
+    final parents = sorted.where((t) => t.parent == null).toList();
+
+    final Map<String, List<MyTask>> children = {};
+
+    for (final t in sorted) {
+      if (t.parent != null) {
+        children.putIfAbsent(t.parent!, () => []).add(t);
+      }
+    }
+
+    final result = <MyTask>[];
+
+    for (final p in parents) {
+      result.add(p);
+
+      final c = children[p.id];
+      if (c != null) {
+        result.addAll(c);
+      }
+    }
+    logger.i("=== NORMALIZE RESULT ===");
+    for (final t in result) {
+      logger.i("${t.title} pos=${t.position}");
+    }
+
+    return result;
+  }
+
+  /// -----------------------------
   /// ADD
   /// -----------------------------
-  ///
-  /// 最後尾追加
-  ///
   MovePlan planAdd(List<MyTask> tasks) {
-    final top = tasks.where((t) => t.parent == null).toList();
-
-    if (top.isEmpty) {
+    if (tasks.isEmpty) {
       return const MovePlan(
         type: MovePlanType.add,
         parent: null,
@@ -43,28 +81,35 @@ class TaskOrderService {
       );
     }
 
-    final last = top.last;
+    final last = tasks.last;
 
-    return MovePlan(type: MovePlanType.add, parent: null, previous: last.id);
+    return MovePlan(
+      type: MovePlanType.add,
+      parent: last.parent,
+      previous: last.id,
+      reason: "append after last",
+    );
   }
 
   /// -----------------------------
   /// MOVE
   /// -----------------------------
-  ///
-  /// 同一レベルのみ
-  ///
   MovePlan planMove({
     required List<MyTask> tasks,
     required MyTask task,
-    required String targetId,
+    required int targetIndex,
   }) {
-    final siblings = tasks.where((t) => t.parent == task.parent).toList();
+    final currentIndex = tasks.indexWhere((t) => t.id == task.id);
 
-    final targetIndex = siblings.indexWhere((t) => t.id == targetId);
+    if (currentIndex < 0) {
+      return const MovePlan.error("TASK_NOT_FOUND");
+    }
 
-    if (targetIndex < 0) {
-      return const MovePlan.error("TARGET_NOT_FOUND");
+    final target = tasks[targetIndex];
+
+    /// 同一レベルのみ
+    if (task.parent != target.parent) {
+      return const MovePlan.error("DIFFERENT_LEVEL_MOVE");
     }
 
     String? previous;
@@ -72,7 +117,7 @@ class TaskOrderService {
     if (targetIndex == 0) {
       previous = null;
     } else {
-      previous = siblings[targetIndex - 1].id;
+      previous = tasks[targetIndex - 1].id;
     }
 
     return MovePlan(
@@ -86,9 +131,6 @@ class TaskOrderService {
   /// -----------------------------
   /// TOGGLE
   /// -----------------------------
-  ///
-  /// parent <-> child
-  ///
   MovePlan planToggle({required List<MyTask> tasks, required MyTask task}) {
     if (task.parent == null) {
       return _planIndent(tasks, task);
@@ -104,20 +146,27 @@ class TaskOrderService {
     final index = tasks.indexWhere((t) => t.id == task.id);
 
     if (index <= 0) {
-      return const MovePlan.error("NO_PREVIOUS_SIBLING");
+      return const MovePlan.error("NO_PREVIOUS_TASK");
     }
 
     final prev = tasks[index - 1];
 
-    if (prev.parent != task.parent) {
-      return const MovePlan.error("INVALID_INDENT_TARGET");
+    /// prev が親
+    if (prev.parent == null) {
+      return MovePlan(
+        type: MovePlanType.indent,
+        parent: prev.id,
+        previous: null,
+        reason: "indent under previous parent",
+      );
     }
 
+    /// prev が子
     return MovePlan(
       type: MovePlanType.indent,
-      parent: prev.id,
-      previous: null,
-      reason: "indent under previous sibling",
+      parent: prev.parent,
+      previous: prev.id,
+      reason: "indent as sibling of previous child",
     );
   }
 
@@ -132,6 +181,7 @@ class TaskOrderService {
 
     final siblings = tasks.where((t) => t.parent == task.parent).toList();
 
+    /// 末尾子のみ
     if (siblings.last.id != task.id) {
       return const MovePlan.error("NOT_LAST_CHILD");
     }
@@ -162,37 +212,6 @@ class TaskOrderService {
     });
 
     return copy;
-  }
-
-  static List<MyTask> normalizeForUi(List<MyTask> tasks) {
-    final sorted = sortByPosition(tasks);
-
-    final parents = sorted.where((t) => t.parent == null).toList();
-
-    final Map<String, List<MyTask>> children = {};
-
-    for (final t in sorted) {
-      if (t.parent != null) {
-        children.putIfAbsent(t.parent!, () => []).add(t);
-      }
-    }
-
-    final result = <MyTask>[];
-
-    for (final p in parents) {
-      result.add(p);
-      final c = children[p.id];
-      if (c != null) {
-        result.addAll(c);
-      }
-    }
-
-    logger.i("=== NORMALIZE RESULT ===");
-    for (final t in result) {
-      logger.i("${t.title} pos=${t.position}");
-    }
-
-    return result;
   }
 
   static List<MyTask> siblings(

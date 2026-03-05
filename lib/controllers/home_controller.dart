@@ -193,6 +193,7 @@ class HomeController {
 
     if (plan.type == MovePlanType.error) {
       logger.w("[toggle] rejected: ${plan.reason}");
+      this._notifyUser("エラー: ${plan.reason}");
       return;
     }
 
