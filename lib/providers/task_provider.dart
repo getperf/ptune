@@ -100,6 +100,7 @@ class TasksNotifier extends StateNotifier<AsyncValue<List<MyTask>>> {
   Future<void> updateTask(MyTask updated, {bool commit = true}) async {
     final current = state.value ?? [];
     final collection = TaskCollection(current);
+    final before = collection.findById(updated.id);
     final updatedList = collection.updateTask(updated);
     state = AsyncValue.data(updatedList);
 
@@ -108,7 +109,11 @@ class TasksNotifier extends StateNotifier<AsyncValue<List<MyTask>>> {
       await taskService.saveTask(updated);
     }
     logger.d(
-      "[TasksNotifier] updateTask: ${updated.id} → ${updated.title}, commit=$commit",
+      "[TasksNotifier] updateTask: ${updated.id} "
+      "status ${before?.status ?? 'none'} -> ${updated.status}, "
+      "started ${before?.started} -> ${updated.started}, "
+      "completed ${before?.completed} -> ${updated.completed}, "
+      "commit=$commit",
     );
   }
 

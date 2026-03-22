@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ptune/providers/task_review/task_review_provider.dart';
 import 'package:ptune/providers/timer_completed_task_provider.dart';
@@ -93,18 +94,37 @@ class TimerController {
     if (summary.isEmpty) return;
 
     logger.i("[TimerController] partial summary to apply: $summary");
+    logger.d(
+      "[TimerController] partial commit selected=${ref.read(selectedTimerTaskProvider)?.id} "
+      "completed=${ref.read(completedTimerTaskProvider)?.id}",
+    );
 
     final applier = ref.read(pomodoroSummaryApplierProvider);
     final updatedTasks = await applier.apply(ref, summary);
+    logger.d(
+      "[TimerController] partial commit updatedTasks=${updatedTasks.map((t) => '${t.id}:${t.status}').join(', ')}",
+    );
 
     final notifier = ref.read(tasksProvider.notifier);
     for (final t in updatedTasks) {
       await notifier.updateTask(t, commit: true);
     }
 
-    // selectedTimerTask の更新が必要な場合はここで行う（同一タスク前提）
-    if (updatedTasks.isNotEmpty) {
-      ref.read(selectedTimerTaskProvider.notifier).state = updatedTasks.first;
+    final selected = ref.read(selectedTimerTaskProvider);
+    if (selected != null) {
+      final matched = updatedTasks
+          .where((task) => task.id == selected.id)
+          .firstOrNull;
+      if (matched != null) {
+        ref.read(selectedTimerTaskProvider.notifier).state = matched;
+        logger.d(
+          "[TimerController] partial commit selectedTimerTask updated=${matched.id}:${matched.status}",
+        );
+      } else {
+        logger.d(
+          "[TimerController] partial commit no selected task match for ${selected.id}",
+        );
+      }
     }
   }
 
@@ -113,7 +133,10 @@ class TimerController {
     final task = ref.read(selectedTimerTaskProvider);
     _session.record(phase: TimerPhase.end, taskId: task?.id);
 
-    final summary = _session.getPartialSummary();
+    final summary = _session.getSummaryAndCommit();
+    logger.d(
+      "[TimerController] finalize summary=$summary selected=${task?.id} skipUpdateTasks=$skipUpdateTasks",
+    );
     final applier = ref.read(pomodoroSummaryApplierProvider);
     final updatedTasks = await applier.apply(ref, summary);
 
@@ -192,6 +215,10 @@ class TimerController {
     final completed = ref.read(completedTimerTaskProvider);
     if (completed == null) return;
 
+    logger.d(
+      "[TimerController] revertCompleted check completed=${completed.id}:${completed.status} intended=$intendedTaskId",
+    );
+
     // タスク切替（intended が別ID）では復帰しない
     if (intendedTaskId != null && completed.id != intendedTaskId) {
       logger.d(
@@ -210,6 +237,9 @@ class TimerController {
 
       // 同一タスクを継続する場合のみ選択タスクとして復帰
       ref.read(selectedTimerTaskProvider.notifier).state = reverted;
+      logger.d(
+        "[TimerController] reverted completed task as selected=${reverted.id}:${reverted.status}",
+      );
     }
 
     // レビュー状態を破棄
@@ -223,7 +253,10 @@ class TimerController {
   /// タイマー開始（初回時にtick即時実行）
   void start() {
     final task = ref.read(selectedTimerTaskProvider);
-    logger.i("[TimerController] start() task: ${task?.title ?? 'タスクなし'}");
+    logger.i(
+      "[TimerController] start() task=${task?.id ?? 'none'} title=${task?.title ?? 'タスクなし'} "
+      "completed=${ref.read(completedTimerTaskProvider)?.id}",
+    );
 
     final phase = ref.read(timerPhaseProvider);
     final type = ref.read(sessionTypeProvider);
@@ -269,7 +302,10 @@ class TimerController {
 
     final timerPhase = ref.read(timerPhaseProvider);
     _session.record(phase: timerPhase, taskId: next.id);
-    logger.d("[TimerController] switchTask: phase=$timerPhase next=${next.id}");
+    logger.d(
+      "[TimerController] switchTask: phase=$timerPhase next=${next.id} "
+      "completed=${ref.read(completedTimerTaskProvider)?.id}",
+    );
 
     if (timerPhase == TimerPhase.paused) {
       // ★ intendedTaskId を渡して「完了タスク復帰で上書き」されないようにする
@@ -381,13 +417,18 @@ class TimerController {
 
     if (updated != null && updated.status == "completed") {
       ref.read(completedTimerTaskProvider.notifier).state = updated;
+      logger.i(
+        "[TimerController] completedTimerTask set=${updated.id}:${updated.status}",
+      );
     } else {
       ref.read(completedTimerTaskProvider.notifier).state = null;
+      logger.i("[TimerController] completedTimerTask cleared after toggle");
     }
 
     final selected = ref.read(selectedTimerTaskProvider);
     if (selected?.id == id) {
       ref.read(selectedTimerTaskProvider.notifier).state = null;
+      logger.i("[TimerController] selectedTimerTask cleared by toggle: $id");
       pause();
     }
 

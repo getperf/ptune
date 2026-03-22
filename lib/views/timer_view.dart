@@ -12,6 +12,7 @@ import 'package:ptune/providers/timer_event_provider.dart';
 import 'package:ptune/states/over_limit_state.dart';
 import 'package:ptune/states/remaining_time_state.dart';
 import 'package:ptune/states/timer_phase_state.dart';
+import 'package:ptune/utils/logger.dart';
 import 'package:ptune/views/components/timer/phase_button.dart';
 import 'package:ptune/views/components/timer/task_header.dart';
 import 'package:ptune/views/components/timer/timer_display.dart';
@@ -72,9 +73,21 @@ class TimerView extends ConsumerWidget {
       }
     });
     ref.listen<MyTask?>(completedTimerTaskProvider, (previous, next) {
+      logger.i(
+        '[TimerView] completedTimerTask changed: '
+        '${previous?.id ?? 'null'}:${previous?.status ?? '-'} -> '
+        '${next?.id ?? 'null'}:${next?.status ?? '-'}',
+      );
       if (next != null) {
         ref.read(taskReviewProvider(next.id).notifier).initFromTask(next);
       }
+    });
+    ref.listen<MyTask?>(selectedTimerTaskProvider, (previous, next) {
+      logger.i(
+        '[TimerView] selectedTimerTask changed: '
+        '${previous?.id ?? 'null'}:${previous?.status ?? '-'} -> '
+        '${next?.id ?? 'null'}:${next?.status ?? '-'}',
+      );
     });
 
     return Scaffold(

@@ -61,5 +61,43 @@ void main() {
       final result = session.getSummaryAndCommit();
       expect(result, isEmpty);
     });
+
+    test('getSummaryAndCommit should prevent previous task carry-over', () {
+      final firstStart = DateTime.utc(2025, 1, 1, 9, 0, 0);
+      final firstEnd = DateTime.utc(2025, 1, 1, 9, 25, 0);
+      final secondStart = DateTime.utc(2025, 1, 1, 9, 30, 0);
+      final secondMid = DateTime.utc(2025, 1, 1, 9, 32, 30);
+
+      session.sessionType = SessionType.work;
+      session.record(
+        phase: TimerPhase.running,
+        taskId: 'taskA',
+        timestamp: firstStart,
+      );
+      session.record(
+        phase: TimerPhase.end,
+        taskId: 'taskA',
+        timestamp: firstEnd,
+      );
+
+      final firstSummary = session.getSummaryAndCommit();
+      expect(firstSummary['taskA'], closeTo(1, 0.01));
+      expect(session.logs, isEmpty);
+
+      session.record(
+        phase: TimerPhase.running,
+        taskId: 'taskB',
+        timestamp: secondStart,
+      );
+      session.record(
+        phase: TimerPhase.paused,
+        taskId: 'taskB',
+        timestamp: secondMid,
+      );
+
+      final secondSummary = session.getPartialSummary();
+      expect(secondSummary.containsKey('taskA'), isFalse);
+      expect(secondSummary.containsKey('taskB'), isTrue);
+    });
   });
 }
