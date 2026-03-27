@@ -293,12 +293,14 @@ class TimerController {
   /// タスク切替時にセッションログを追記
   /// - Home側で selectedTimerTaskProvider を更新済みである前提
   /// - paused の場合は再開するが、完了タスク復帰処理で選択タスクを上書きしない
-  void switchTask() {
+  Future<void> switchTask() async {
     final next = ref.read(selectedTimerTaskProvider);
     if (next == null) {
       logger.w("[TimerController] switchTask() ignored: no selected task");
       return;
     }
+
+    await _commitIntermediateProgress();
 
     final timerPhase = ref.read(timerPhaseProvider);
     _session.record(phase: timerPhase, taskId: next.id);

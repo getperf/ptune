@@ -52,7 +52,7 @@ class HomeController {
     );
   }
 
-  void startTimer(MyTask task) {
+  Future<void> startTimer(MyTask task) async {
     // 1. 切替対象タスクを明示
     ref.read(selectedTimerTaskProvider.notifier).state = task;
     logger.i("[HomeController] startTimer: ${task.id} (${task.title})");
@@ -62,7 +62,7 @@ class HomeController {
 
     if (phase == TimerPhase.paused || phase == TimerPhase.running) {
       logger.i("[HomeController] switchTask");
-      ref.read(timerControllerProvider).switchTask();
+      await ref.read(timerControllerProvider).switchTask();
     } else {
       ref.read(timerPhaseProvider.notifier).state = TimerPhase.ready;
       ref.read(timerControllerProvider).start();
