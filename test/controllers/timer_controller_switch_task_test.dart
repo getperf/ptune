@@ -102,12 +102,12 @@ void main() {
       container.read(tasksProvider);
       await Future<void>.delayed(Duration.zero);
 
-      container.read(selectedTimerTaskProvider.notifier).state = taskA;
+      container.read(selectedTimerTaskIdProvider.notifier).state = taskA.id;
       final controller = container.read(timerControllerProvider);
 
       controller.start();
 
-      container.read(selectedTimerTaskProvider.notifier).state = taskB;
+      container.read(selectedTimerTaskIdProvider.notifier).state = taskB.id;
       await controller.switchTask();
 
       final savedTaskA = fakeService.savedTasks.lastWhere(

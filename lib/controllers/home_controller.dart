@@ -54,7 +54,7 @@ class HomeController {
 
   Future<void> startTimer(MyTask task) async {
     // 1. 切替対象タスクを明示
-    ref.read(selectedTimerTaskProvider.notifier).state = task;
+    ref.read(selectedTimerTaskIdProvider.notifier).state = task.id;
     logger.i("[HomeController] startTimer: ${task.id} (${task.title})");
 
     // 2. 現在のフェーズで分岐

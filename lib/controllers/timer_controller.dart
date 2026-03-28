@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ptune/providers/task_review/task_review_provider.dart';
 import 'package:ptune/providers/timer_completed_task_provider.dart';
@@ -108,23 +107,6 @@ class TimerController {
     final notifier = ref.read(tasksProvider.notifier);
     for (final t in updatedTasks) {
       await notifier.updateTask(t, commit: true);
-    }
-
-    final selected = ref.read(selectedTimerTaskProvider);
-    if (selected != null) {
-      final matched = updatedTasks
-          .where((task) => task.id == selected.id)
-          .firstOrNull;
-      if (matched != null) {
-        ref.read(selectedTimerTaskProvider.notifier).state = matched;
-        logger.d(
-          "[TimerController] partial commit selectedTimerTask updated=${matched.id}:${matched.status}",
-        );
-      } else {
-        logger.d(
-          "[TimerController] partial commit no selected task match for ${selected.id}",
-        );
-      }
     }
   }
 
@@ -236,7 +218,7 @@ class TimerController {
           .updateTask(reverted, commit: false);
 
       // 同一タスクを継続する場合のみ選択タスクとして復帰
-      ref.read(selectedTimerTaskProvider.notifier).state = reverted;
+      ref.read(selectedTimerTaskIdProvider.notifier).state = reverted.id;
       logger.d(
         "[TimerController] reverted completed task as selected=${reverted.id}:${reverted.status}",
       );
@@ -398,7 +380,7 @@ class TimerController {
 
     ref.read(timerPhaseProvider.notifier).state = TimerPhase.ready;
     ref.read(sessionTypeProvider.notifier).state = SessionType.work;
-    ref.read(selectedTimerTaskProvider.notifier).state = null;
+    ref.read(selectedTimerTaskIdProvider.notifier).state = null;
 
     ref.read(remainingTimeProvider.notifier).resetToZero();
 
@@ -429,7 +411,7 @@ class TimerController {
 
     final selected = ref.read(selectedTimerTaskProvider);
     if (selected?.id == id) {
-      ref.read(selectedTimerTaskProvider.notifier).state = null;
+      ref.read(selectedTimerTaskIdProvider.notifier).state = null;
       logger.i("[TimerController] selectedTimerTask cleared by toggle: $id");
       pause();
     }

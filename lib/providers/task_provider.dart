@@ -31,7 +31,14 @@ final taskServiceProvider = Provider<TaskServiceInterface>((ref) {
 
 /// 選択中タスクの状態（null許容）
 final selectedEditTaskProvider = StateProvider<MyTask?>((ref) => null);
-final selectedTimerTaskProvider = StateProvider<MyTask?>((ref) => null);
+final selectedTimerTaskIdProvider = StateProvider<String?>((ref) => null);
+final selectedTimerTaskProvider = Provider<MyTask?>((ref) {
+  final taskId = ref.watch(selectedTimerTaskIdProvider);
+  if (taskId == null) return null;
+
+  final tasks = ref.watch(tasksProvider).valueOrNull ?? const <MyTask>[];
+  return TaskCollection(tasks).findById(taskId);
+});
 
 /// Notifier Provider
 final tasksProvider =
