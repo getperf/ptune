@@ -69,6 +69,7 @@ class HomeController {
     }
 
     // 3. タイマー画面へ遷移
+    if (!context.mounted) return;
     context.push('/timer');
   }
 
@@ -192,7 +193,7 @@ class HomeController {
     final notifier = ref.read(tasksProvider.notifier);
     final service = ref.read(taskServiceProvider);
 
-    final tasks = notifier.state.value ?? [];
+    final tasks = ref.read(tasksProvider).value ?? [];
 
     final orderService = TaskOrderService();
 
@@ -200,7 +201,7 @@ class HomeController {
 
     if (plan.type == MovePlanType.error) {
       logger.w("[toggle] rejected: ${plan.reason}");
-      this._notifyUser("エラー: ${plan.reason}");
+      _notifyUser("エラー: ${plan.reason}");
       return;
     }
 

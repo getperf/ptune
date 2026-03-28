@@ -19,7 +19,6 @@ import 'package:ptune/services/local_task_list_service.dart';
 import 'package:ptune/services/remote_task_list_service.dart';
 import 'package:ptune/services/task_exporter.dart';
 import 'package:ptune/services/task_importer.dart';
-import 'package:ptune/services/task_list_initializer.dart';
 import 'package:ptune/utils/logger.dart';
 import 'package:ptune/utils/env_config.dart';
 

@@ -85,14 +85,28 @@ class AppRouter {
       },
       routes: [
         GoRoute(
-            path: RoutePaths.splash, builder: (_, __) => const _SplashView()),
-        GoRoute(path: RoutePaths.auth, builder: (_, __) => const AuthView()),
-        GoRoute(path: RoutePaths.home, builder: (_, __) => const HomeView()),
-        GoRoute(path: RoutePaths.sync, builder: (_, __) => const SyncView()),
-        GoRoute(path: RoutePaths.timer, builder: (_, __) => const TimerView()),
+          path: RoutePaths.splash,
+          builder: (context, state) => const _SplashView(),
+        ),
+        GoRoute(
+          path: RoutePaths.auth,
+          builder: (context, state) => const AuthView(),
+        ),
+        GoRoute(
+          path: RoutePaths.home,
+          builder: (context, state) => const HomeView(),
+        ),
+        GoRoute(
+          path: RoutePaths.sync,
+          builder: (context, state) => const SyncView(),
+        ),
+        GoRoute(
+          path: RoutePaths.timer,
+          builder: (context, state) => const TimerView(),
+        ),
         GoRoute(
           path: RoutePaths.settings,
-          builder: (_, __) => const SettingsView(),
+          builder: (context, state) => const SettingsView(),
         ),
       ],
     );
