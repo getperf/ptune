@@ -392,6 +392,8 @@ class TimerController {
   /// 指定タスクを完了／未完了に切り替え、選択中であれば解除
   Future<void> toggleTask(String id) async {
     await _finalizeSessionAndApply(skipUpdateTasks: true);
+    _resetSessionState();
+    _session.clear();
 
     final tasksNotifier = ref.read(tasksProvider.notifier);
 
