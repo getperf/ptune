@@ -55,14 +55,7 @@ class PomodoroSession {
     logger.d("[PomodoroSession] rawSummary: $rawSummary");
     logger.d("[PomodoroSession] committedSeconds: $_committedSeconds");
 
-    final Map<String, double> deltaSummary = {};
-    for (final entry in rawSummary.entries) {
-      final already = _committedSeconds[entry.key] ?? 0;
-      final diff = entry.value - already;
-      if (diff > 0) {
-        deltaSummary[entry.key] = diff;
-      }
-    }
+    final deltaSummary = _buildDeltaSummary(rawSummary);
     logger.d("[PomodoroSession] deltaSummary: $deltaSummary");
 
     // コミット済みに追加
@@ -93,10 +86,12 @@ class PomodoroSession {
 
     final analyzer = PomodoroLogAnalyzer(logs);
     final summary = analyzer.summarize();
+    final deltaSummary = _buildDeltaSummary(summary);
 
     logger.i("[PomodoroSession] summary computed for task=$taskId: $summary");
+    logger.i("[PomodoroSession] final delta summary: $deltaSummary");
 
-    final pomodoroCounts = _convertToPomodoroUnits(summary, pomodoroUnitSec);
+    final pomodoroCounts = _convertToPomodoroUnits(deltaSummary, pomodoroUnitSec);
     logger.i("[PomodoroSession] pomodoro counts: $pomodoroCounts");
 
     logs.clear();
@@ -113,6 +108,20 @@ class PomodoroSession {
     sessionType = SessionType.work;
     pomodoroUnitSec = 1500;
     logger.i("[PomodoroSession] cleared → reset to initial state");
+  }
+
+  Map<String, double> _buildDeltaSummary(Map<String, double> rawSummary) {
+    final Map<String, double> deltaSummary = {};
+
+    for (final entry in rawSummary.entries) {
+      final already = _committedSeconds[entry.key] ?? 0;
+      final diff = entry.value - already;
+      if (diff > 0) {
+        deltaSummary[entry.key] = diff;
+      }
+    }
+
+    return deltaSummary;
   }
 
   Map<String, double> _convertToPomodoroUnits(
