@@ -21,7 +21,7 @@ class LogExporter {
 
       await SharePlus.instance.share(
         ShareParams(
-          text: "ptune デバッグログ（${size} bytes）",
+          text: "ptune デバッグログ（$size bytes）",
           files: [
             XFile(
               file.path,

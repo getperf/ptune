@@ -7,6 +7,7 @@ import 'package:ptune/providers/local_task_service_provider.dart';
 import 'package:ptune/providers/remote_task_service_provider.dart';
 import 'package:ptune/providers/task_collection.dart';
 import 'package:ptune/services/common_task_service.dart';
+import 'package:ptune/services/task_order_service.dart';
 import 'package:ptune/utils/env_config.dart';
 import '../models/my_task.dart';
 import '../models/my_task_ext.dart';
@@ -30,14 +31,21 @@ final taskServiceProvider = Provider<TaskServiceInterface>((ref) {
 
 /// 選択中タスクの状態（null許容）
 final selectedEditTaskProvider = StateProvider<MyTask?>((ref) => null);
-final selectedTimerTaskProvider = StateProvider<MyTask?>((ref) => null);
+final selectedTimerTaskIdProvider = StateProvider<String?>((ref) => null);
+final selectedTimerTaskProvider = Provider<MyTask?>((ref) {
+  final taskId = ref.watch(selectedTimerTaskIdProvider);
+  if (taskId == null) return null;
+
+  final tasks = ref.watch(tasksProvider).valueOrNull ?? const <MyTask>[];
+  return TaskCollection(tasks).findById(taskId);
+});
 
 /// Notifier Provider
 final tasksProvider =
     StateNotifierProvider<TasksNotifier, AsyncValue<List<MyTask>>>((ref) {
-  final service = ref.watch(taskServiceProvider);
-  return TasksNotifier(service);
-});
+      final service = ref.watch(taskServiceProvider);
+      return TasksNotifier(service);
+    });
 
 /// タスク一覧の管理
 class TasksNotifier extends StateNotifier<AsyncValue<List<MyTask>>> {
@@ -50,11 +58,47 @@ class TasksNotifier extends StateNotifier<AsyncValue<List<MyTask>>> {
   Future<void> _loadTasks() async {
     try {
       final tasks = await taskService.fetchTasks();
-      state = AsyncValue.data(tasks);
-      logger.i("[TasksNotifier] loaded ${tasks.length} tasks");
-    } on ApiException catch (e, st) {
-      // ApiExceptionはAsyncErrorに流す
+
+      final sorted = TaskOrderService.normalizeForUi(tasks);
+
+      state = AsyncValue.data(sorted);
+
+      logger.i("[TasksNotifier] loaded ${sorted.length} tasks (sorted)");
+    } catch (e, st) {
       state = AsyncValue.error(e, st);
+    }
+  }
+
+  Future<void> submitAdd(MyTask task) async {
+    try {
+      final current = state.value ?? [];
+
+      /// ① 追加位置計算
+      final plan = TaskOrderService().planAdd(current);
+
+      /// ② create
+      final created = await taskService.addTask(task);
+
+      /// ③ move
+      await taskService.moveTask(
+        created.id,
+        parentId: plan.parent,
+        previousId: plan.previous,
+      );
+
+      /// remote fetch を強制
+      if (taskService is CommonTaskService) {
+        (taskService as CommonTaskService).forceRemoteNextFetch();
+      }
+
+      /// ④ fetch (position確定)
+      final tasks = await taskService.fetchTasks();
+
+      final sorted = TaskOrderService.normalizeForUi(tasks);
+
+      state = AsyncValue.data(sorted);
+
+      logger.i("[TasksNotifier] submitAdd: ${created.title}");
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
@@ -63,6 +107,7 @@ class TasksNotifier extends StateNotifier<AsyncValue<List<MyTask>>> {
   Future<void> updateTask(MyTask updated, {bool commit = true}) async {
     final current = state.value ?? [];
     final collection = TaskCollection(current);
+    final before = collection.findById(updated.id);
     final updatedList = collection.updateTask(updated);
     state = AsyncValue.data(updatedList);
 
@@ -71,22 +116,29 @@ class TasksNotifier extends StateNotifier<AsyncValue<List<MyTask>>> {
       await taskService.saveTask(updated);
     }
     logger.d(
-        "[TasksNotifier] updateTask: ${updated.id} → ${updated.title}, commit=$commit");
+      "[TasksNotifier] updateTask: ${updated.id} "
+      "status ${before?.status ?? 'none'} -> ${updated.status}, "
+      "started ${before?.started} -> ${updated.started}, "
+      "completed ${before?.completed} -> ${updated.completed}, "
+      "commit=$commit",
+    );
   }
 
   Future<void> updateTasks(List<MyTask> tasks) async {
     try {
-      state = AsyncValue.data(tasks);
-      await taskService.saveTasks(tasks);
-      logger.i("[TasksNotifier] updateTasks: ${tasks.length} tasks");
+      final sorted = TaskOrderService.normalizeForUi(tasks);
+      state = AsyncValue.data(sorted);
+      await taskService.saveTasks(sorted);
+      logger.i("[TasksNotifier] updateTasks: ${sorted.length} tasks");
     } on ApiException catch (e, st) {
       state = AsyncValue.error(e, st);
     }
   }
 
   void replaceAll(List<MyTask> tasks) {
-    state = AsyncValue.data(tasks);
-    logger.i("[TasksNotifier] replaceAll: ${tasks.length} tasks");
+    final sorted = TaskOrderService.normalizeForUi(tasks);
+    state = AsyncValue.data(sorted);
+    logger.i("[TasksNotifier] replaceAll: ${sorted.length} tasks (sorted)");
   }
 
   MyTask? findById(String id) {
@@ -110,7 +162,9 @@ class TasksNotifier extends StateNotifier<AsyncValue<List<MyTask>>> {
 
     final updatedList = [...current];
     updatedList[index] = updated;
-    state = AsyncValue.data(updatedList);
+
+    final sorted = TaskOrderService.normalizeForUi(updatedList);
+    state = AsyncValue.data(sorted);
 
     try {
       await taskService.saveTask(updated);
@@ -136,17 +190,17 @@ void handleTaskError(BuildContext context, Object error) {
         message = "エラーが発生しました (${error.statusCode}): ${error.message}";
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     } else {
       // 通知不要（オフライン/サーバ障害など）
       logger.w("Suppressed error: $error");
     }
   } else {
     logger.e("Unexpected error: $error");
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("不明なエラーが発生しました。")),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text("不明なエラーが発生しました。")));
   }
 }

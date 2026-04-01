@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:ptune/controllers/setting_controller.dart';
 import 'package:ptune/states/auto_mode_state.dart';
 import 'package:ptune/states/theme_mode_provider.dart';
+import 'package:ptune/states/haptic_setting.dart';
+import 'package:ptune/states/haptic_setting_provider.dart';
 import 'package:ptune/utils/logger.dart';
 
 class SettingsView extends ConsumerWidget {
@@ -16,6 +18,7 @@ class SettingsView extends ConsumerWidget {
     final autoEnabled = autoMode.isAutoEnabled;
     final safeEnabled = autoMode.isSafeEnabled;
     final controller = SettingsController(ref);
+    final hapticSetting = ref.watch(hapticSettingProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -49,6 +52,22 @@ class SettingsView extends ConsumerWidget {
               value: themeMode == ThemeMode.dark,
               onChanged: controller.toggleDarkMode,
             ),
+            const Text("バイブ通知", style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            SegmentedButton<HapticSetting>(
+              segments: HapticSetting.values
+                  .map(
+                    (e) => ButtonSegment<HapticSetting>(
+                      value: e,
+                      label: Text(e.label),
+                    ),
+                  )
+                  .toList(),
+              selected: {hapticSetting},
+              onSelectionChanged: (selection) {
+                controller.setHapticSetting(selection.first);
+              },
+            ),
             ListTile(
               title: const Text('ログをエクスポート'),
               subtitle: const Text('アプリの動作ログを保存します'),
@@ -57,8 +76,9 @@ class SettingsView extends ConsumerWidget {
                 try {
                   final msg = await controller.exportLogFile();
                   if (!context.mounted) return;
-                  ScaffoldMessenger.of(context)
-                      .showSnackBar(SnackBar(content: Text(msg)));
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(msg)));
                 } catch (e, st) {
                   logger.e(
                     "[SettingsView] Failed to export log file: $e",
@@ -79,8 +99,9 @@ class SettingsView extends ConsumerWidget {
                 try {
                   final msg = await controller.deleteLogFile();
                   if (!context.mounted) return;
-                  ScaffoldMessenger.of(context)
-                      .showSnackBar(SnackBar(content: Text(msg)));
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(msg)));
                 } catch (e, st) {
                   logger.e(
                     "[SettingsView] Failed to delete log file",

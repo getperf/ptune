@@ -37,8 +37,9 @@ class _TaskListViewState extends ConsumerState<TaskListView>
     final tasks = asyncTasks.value ?? [];
     final controller = ref.read(homeControllerProvider(context));
 
-    final incompleteTasks =
-        tasks.where((t) => t.status != "completed").toList();
+    final incompleteTasks = tasks
+        .where((t) => t.status != "completed")
+        .toList();
     final completedTasks = tasks.where((t) => t.status == "completed").toList();
 
     return Column(

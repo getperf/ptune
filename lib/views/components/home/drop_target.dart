@@ -36,7 +36,7 @@ class DropTargetWidget extends ConsumerWidget {
             details.data, indicator.previousTask, indicator.asChild);
         ref.read(currentDropIndicatorProvider.notifier).state = null;
       },
-      builder: (context, _, __) {
+      builder: (context, candidateData, rejectedData) {
         return DropIndicatorBar(
           active: isActive,
           asChild: indicator.asChild,

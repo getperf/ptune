@@ -50,6 +50,7 @@ class TimerDisplay extends ConsumerWidget {
           builder: (context, constraints) {
             final baseSize = min(constraints.maxWidth, constraints.maxHeight);
             final width = baseSize.clamp(200.0, 400.0) - 32;
+            // final width = min(baseSize * 0.75, 320).toDouble();
             final color = getSessionColor(sessionType);
 
             return Center(

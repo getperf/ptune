@@ -2,15 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ptune/models/my_task.dart';
+import 'package:ptune/models/pomodoro_info.dart';
 import 'package:ptune/models/timer_phase.dart';
 import 'package:ptune/providers/is_online_provider.dart';
-import 'package:ptune/providers/task_factory_provider.dart';
 import 'package:ptune/providers/task_list_provider.dart';
 import 'package:ptune/providers/timer_controller_provider.dart';
 import 'package:ptune/services/common_task_service.dart';
+import 'package:ptune/services/task_order_service.dart';
 import 'package:ptune/states/timer_phase_state.dart';
-import 'package:ptune/utils/print_tasks.dart';
-import 'package:ptune/utils/task_hierarchy.dart';
 import 'package:ptune/views/edit_task_view.dart';
 import 'package:ptune/providers/task_provider.dart';
 import 'package:ptune/utils/logger.dart';
@@ -53,45 +52,54 @@ class HomeController {
     );
   }
 
-  void startTimer(MyTask task) {
-    ref.read(selectedTimerTaskProvider.notifier).state = task;
+  Future<void> startTimer(MyTask task) async {
+    // 1. 切替対象タスクを明示
+    ref.read(selectedTimerTaskIdProvider.notifier).state = task.id;
     logger.i("[HomeController] startTimer: ${task.id} (${task.title})");
+
+    // 2. 現在のフェーズで分岐
     final phase = ref.read(timerPhaseProvider);
+
     if (phase == TimerPhase.paused || phase == TimerPhase.running) {
-      logger.i("[HomeController] Starting task without resetting timer state");
-      ref.read(timerControllerProvider).switchTask();
+      logger.i("[HomeController] switchTask");
+      await ref.read(timerControllerProvider).switchTask();
     } else {
       ref.read(timerPhaseProvider.notifier).state = TimerPhase.ready;
       ref.read(timerControllerProvider).start();
     }
+
+    // 3. タイマー画面へ遷移
+    if (!context.mounted) return;
     context.push('/timer');
   }
 
-  Future<void> submitTask(String title, String note) async {
-    final taskFactory = ref.read(taskFactoryProvider);
+  int _extractPlanned(String label) {
+    final match = RegExp(r'🍅x(\d+)').firstMatch(label);
+    return match != null ? int.parse(match.group(1)!) : 0;
+  }
+
+  Future<void> submitTask(String title, String label) async {
     final list = ref.read(selectedTaskListProvider);
     if (list == null || list.id.isEmpty) {
       _notifyUser('タスクリストが未選択です');
       return;
     }
-    final task = taskFactory.createNewTask(
-      title: title,
-      rawNote: note,
+
+    final planned = _extractPlanned(label);
+    final isBlocked = label.contains('🚫');
+    final finalTitle = isBlocked ? '$title🚫' : title;
+
+    final task = MyTask(
+      id: '',
+      title: finalTitle,
       tasklistId: list.id,
+      status: 'needsAction',
+      pomodoro: PomodoroInfo(planned: planned),
     );
 
-    final taskService = ref.read(taskServiceProvider);
-    final asyncTasks = ref.read(tasksProvider);
-    final tasks = asyncTasks.value ?? [];
-
     try {
-      final plan = planInsertLast(tasks);
-      final newTask = await taskService.addTask(task);
-      await moveTaskApi(newTask.id,
-          previousId: plan.previousId, parentId: plan.parent);
-      printTasks(tasks);
-
-      logger.i("[HomeController] submitTask $newTask");
+      await ref.read(tasksProvider.notifier).submitAdd(task);
+      // ④ refresh
       ref.invalidate(tasksProvider);
     } catch (e, st) {
       logger.e('[HomeController] submitTask failed', error: e, stackTrace: st);
@@ -112,33 +120,50 @@ class HomeController {
       ref.invalidate(tasksProvider);
       logger.i("[HomeController] deleteCompletedTasks");
     } catch (e, st) {
-      logger.e('[HomeController] deleteCompletedTasks failed',
-          error: e, stackTrace: st);
+      logger.e(
+        '[HomeController] deleteCompletedTasks failed',
+        error: e,
+        stackTrace: st,
+      );
       if (context.mounted) handleTaskError(context, e);
     }
   }
 
-  Future<void> moveTask(MyTask task, MyTask? previous, bool asChild) async {
-    final asyncTasks = ref.read(tasksProvider);
-    final tasks = asyncTasks.value ?? [];
-
-    logger.i(
-        "[moveTask] move ${task.id}, previous: ${previous?.id}, asChild: $asChild");
-
-    final plan = planMove(tasks, task, previous, asChild);
-
-    if (plan.kind == MovePlanKind.error) {
-      _notifyUser(plan.reason);
-      return;
-    }
+  Future<void> moveTask(MyTask task, MyTask? previousTask, bool asChild) async {
+    final notifier = ref.read(tasksProvider.notifier);
+    final service = ref.read(taskServiceProvider);
 
     try {
-      await moveTaskApi(task.id,
-          previousId: plan.previousId, parentId: plan.parent);
-      printTasks(tasks);
-    } catch (e, st) {
-      logger.e('[HomeController] moveTask failed', error: e, stackTrace: st);
-      if (context.mounted) handleTaskError(context, e);
+      String? parentId;
+      String? previousId;
+
+      if (asChild) {
+        /// 子として追加
+        parentId = previousTask?.id;
+        previousId = null;
+      } else {
+        /// 同レベル移動
+        parentId = previousTask?.parent;
+        previousId = previousTask?.id;
+      }
+
+      await service.moveTask(
+        task.id,
+        parentId: parentId,
+        previousId: previousId,
+      );
+
+      if (service is CommonTaskService) {
+        service.forceRemoteNextFetch();
+      }
+
+      final refreshed = await service.fetchTasks();
+
+      notifier.replaceAll(refreshed);
+
+      logger.i("[move] ${task.title} parent=$parentId prev=$previousId");
+    } catch (e) {
+      logger.e("[move] failed: $e");
     }
   }
 
@@ -165,27 +190,41 @@ class HomeController {
   }
 
   Future<void> toggleSubtask(MyTask task) async {
-    final asyncTasks = ref.read(tasksProvider);
-    final tasks = asyncTasks.value ?? [];
+    final notifier = ref.read(tasksProvider.notifier);
+    final service = ref.read(taskServiceProvider);
 
-    final plan = planToggleMove(tasks, task);
+    final tasks = ref.read(tasksProvider).value ?? [];
 
-    if (plan.kind == MovePlanKind.error) {
-      _notifyUser(plan.reason);
+    final orderService = TaskOrderService();
+
+    final plan = orderService.planToggle(tasks: tasks, task: task);
+
+    if (plan.type == MovePlanType.error) {
+      logger.w("[toggle] rejected: ${plan.reason}");
+      _notifyUser("エラー: ${plan.reason}");
       return;
     }
 
     try {
-      await moveTaskApi(
+      await service.moveTask(
         task.id,
         parentId: plan.parent,
-        previousId: plan.previousId,
+        previousId: plan.previous,
       );
-      printTasks(tasks);
-    } catch (e, st) {
-      logger.e('[HomeController] toggleSubtask failed',
-          error: e, stackTrace: st);
-      if (context.mounted) handleTaskError(context, e);
+
+      if (service is CommonTaskService) {
+        service.forceRemoteNextFetch();
+      }
+
+      final refreshed = await service.fetchTasks();
+
+      notifier.replaceAll(refreshed);
+
+      logger.i(
+        "[toggle] ${task.title} parent=${plan.parent} prev=${plan.previous}",
+      );
+    } catch (e) {
+      logger.e("[toggle] failed: $e");
     }
   }
 

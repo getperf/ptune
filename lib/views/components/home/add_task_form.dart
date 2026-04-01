@@ -9,14 +9,6 @@ class AddTaskForm extends ConsumerStatefulWidget {
   ConsumerState<AddTaskForm> createState() => _AddTaskFormState();
 }
 
-// class AddTaskForm extends StatefulWidget {
-//   const AddTaskForm({super.key});
-
-//   @override
-//   State<AddTaskForm> createState() => _AddTaskFormState();
-// }
-
-// class _AddTaskFormState extends State<AddTaskForm> {
 class _AddTaskFormState extends ConsumerState<AddTaskForm> {
   final _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
@@ -45,17 +37,20 @@ class _AddTaskFormState extends ConsumerState<AddTaskForm> {
     final title = _controller.text.trim();
     if (title.isEmpty) return;
 
-    final note = _tomatoLabels[_tomatoIndex];
+    final label = _tomatoLabels[_tomatoIndex];
+
     try {
-      await homeController.submitTask(title, note);
+      await homeController.submitTask(title, label);
+
       if (!mounted) return;
+
       _controller.clear();
       setState(() => _tomatoIndex = 0);
       FocusScope.of(context).requestFocus(_focusNode);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('登録失敗: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('登録失敗: $e')));
     }
   }
 
@@ -65,21 +60,17 @@ class _AddTaskFormState extends ConsumerState<AddTaskForm> {
       padding: const EdgeInsets.all(8),
       child: Row(
         children: [
-          // 入力フィールド
           Expanded(
             child: TextField(
               controller: _controller,
               focusNode: _focusNode,
-              decoration: const InputDecoration(
-                hintText: 'タスクを入力...',
-              ),
+              decoration: const InputDecoration(hintText: 'タスクを入力...'),
               onSubmitted: (_) => _submit(),
             ),
           ),
           const SizedBox(width: 8),
-          // 🍅ボタン
           SizedBox(
-            width: 72, // 実際の最大ラベル幅に見合う値に縮小
+            width: 72,
             child: ElevatedButton(
               onPressed: _cycleTomato,
               style: ElevatedButton.styleFrom(
@@ -92,7 +83,6 @@ class _AddTaskFormState extends ConsumerState<AddTaskForm> {
             ),
           ),
           const SizedBox(width: 8),
-          // 登録ボタン（省略可）
           IconButton(
             icon: const Icon(Icons.check),
             tooltip: 'タスクを追加',
@@ -101,12 +91,5 @@ class _AddTaskFormState extends ConsumerState<AddTaskForm> {
         ],
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    _focusNode.dispose();
-    super.dispose();
   }
 }

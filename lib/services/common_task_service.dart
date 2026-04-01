@@ -86,11 +86,20 @@ class CommonTaskService implements TaskServiceInterface {
   @override
   Future<void> saveTask(MyTask task) async {
     await local.saveTask(task);
-    logger.i('[CommonTaskService] local saveTask: ${task.id}');
+    logger.i(
+      '[CommonTaskService] local saveTask: ${task.id} status=${task.status} '
+      'started=${task.started} completed=${task.completed}',
+    );
 
     unawaited(remote.saveTask(task).catchError((e) {
-      logger.w('[CommonTaskService] remote saveTask failed: $e');
+      logger.w(
+        '[CommonTaskService] remote saveTask failed: task=${task.id} '
+        'status=${task.status} error=$e',
+      );
       unsyncedLog.markUnsynced(task.id);
+      logger.w(
+        '[CommonTaskService] unsynced marked: ${task.id} total=${unsyncedLog.unsyncedTaskIds.length}',
+      );
     }));
   }
 

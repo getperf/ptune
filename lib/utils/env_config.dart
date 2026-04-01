@@ -36,4 +36,13 @@ class EnvConfig {
       dotenv.env['LOG_LEVEL']?.toLowerCase() ?? 'debug';
 
   static bool get logToFile => dotenv.env['LOG_FILE'] == 'true';
+
+  /// --- 追加 ---
+  static String get taskListTitle {
+    final value = dotenv.env['TASKLIST_TITLE']?.trim();
+    if (value == null || value.isEmpty) {
+      return 'Today';
+    }
+    return value;
+  }
 }

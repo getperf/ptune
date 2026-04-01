@@ -1,4 +1,3 @@
-// lib/models/my_task.dart
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'pomodoro_info.dart';
 import 'review_flag.dart';
@@ -23,7 +22,12 @@ abstract class MyTask with _$MyTask {
     DateTime? completed,
     DateTime? updated,
     @Default(false) bool deleted,
-    @Default(<ReviewFlag>[]) List<ReviewFlag> reviewFlags,
+    @Default(<ReviewFlag>[])
+    @JsonKey(defaultValue: <ReviewFlag>[], unknownEnumValue: ReviewFlag.unknown)
+    List<ReviewFlag> reviewFlags,
+    // ★ 追加
+    String? goal,
+    @Default(<String>[]) List<String> tags,
   }) = _MyTask;
 
   factory MyTask.fromJson(Map<String, dynamic> json) => _$MyTaskFromJson(json);
