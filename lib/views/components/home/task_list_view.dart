@@ -55,8 +55,8 @@ class _TaskListViewState extends ConsumerState<TaskListView>
           child: TabBarView(
             controller: _tabController,
             children: [
-              _buildHierarchicalTaskList(incompleteTasks, controller),
-              _buildCompletedTab(completedTasks, controller),
+              _buildHierarchicalTaskList(incompleteTasks, tasks, controller),
+              _buildCompletedTab(completedTasks, tasks, controller),
             ],
           ),
         ),
@@ -67,9 +67,10 @@ class _TaskListViewState extends ConsumerState<TaskListView>
   // 階層表示（未完了タスク用）
   Widget _buildHierarchicalTaskList(
     List<MyTask> tasks,
+    List<MyTask> allTasks,
     HomeController controller,
   ) {
-    return DraggableTaskList(allTasks: tasks);
+    return DraggableTaskList(allTasks: tasks, parentLookupTasks: allTasks);
 
     // final parentTasks = tasks.where((t) => t.parent == null).toList()
     //   ..sort((a, b) => (a.position ?? '').compareTo(b.position ?? ''));
@@ -115,7 +116,11 @@ class _TaskListViewState extends ConsumerState<TaskListView>
   //       .toList();
   // }
 
-  Widget _buildCompletedTab(List<MyTask> tasks, HomeController controller) {
+  Widget _buildCompletedTab(
+    List<MyTask> tasks,
+    List<MyTask> allTasks,
+    HomeController controller,
+  ) {
     return Column(
       children: [
         if (tasks.isNotEmpty)
@@ -138,17 +143,34 @@ class _TaskListViewState extends ConsumerState<TaskListView>
               },
             ),
           ),
-        Expanded(child: _buildFlatTaskList(tasks, controller)),
+        Expanded(child: _buildFlatTaskList(tasks, allTasks, controller)),
       ],
     );
   }
 
   // フラット表示（完了タスク用）
-  Widget _buildFlatTaskList(List<MyTask> tasks, HomeController controller) {
+  Widget _buildFlatTaskList(
+    List<MyTask> tasks,
+    List<MyTask> allTasks,
+    HomeController controller,
+  ) {
+    final taskById = {for (final task in allTasks) task.id: task};
+
     return ListView.builder(
       itemCount: tasks.length,
       itemBuilder: (_, index) {
-        return _buildTaskTile(tasks[index], controller, indent: 0);
+        final task = tasks[index];
+        final parentId = task.parent;
+        final parentTitle = parentId != null && parentId.isNotEmpty
+            ? taskById[parentId]?.title
+            : null;
+
+        return _buildTaskTile(
+          task,
+          controller,
+          indent: 0,
+          parentTitle: parentTitle,
+        );
       },
     );
   }
@@ -158,9 +180,11 @@ class _TaskListViewState extends ConsumerState<TaskListView>
     MyTask task,
     HomeController controller, {
     required double indent,
+    String? parentTitle,
   }) {
     final pomodoro = task.pomodoro;
     final planned = pomodoro?.planned ?? 0;
+    final parentTitleColor = Theme.of(context).textTheme.bodySmall?.color;
 
     return InkWell(
       onTap: () => controller.onTaskTapped(task),
@@ -185,18 +209,25 @@ class _TaskListViewState extends ConsumerState<TaskListView>
 
             // 📄 タイトル（左詰め）
             Expanded(
-              child: Text(
-                task.title,
-                overflow: TextOverflow.ellipsis, // ✅ 省略記号で切り捨て
-                maxLines: 1, // ✅ 1行に制限（改行させない）
-                softWrap: false, // ✅ 明示的に改行禁止
-                style: TextStyle(
-                  fontSize: 16,
-                  decoration: task.status == "completed"
-                      ? TextDecoration.lineThrough
-                      : null,
-                ),
-              ),
+              child: parentTitle == null
+                  ? _buildTaskTitle(task.title, task.status)
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          parentTitle,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          softWrap: false,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: parentTitleColor,
+                          ),
+                        ),
+                        _buildTaskTitle(task.title, task.status),
+                      ],
+                    ),
             ),
 
             // 🍅 予定/実績（予定がある場合のみ）
@@ -216,6 +247,19 @@ class _TaskListViewState extends ConsumerState<TaskListView>
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildTaskTitle(String title, String status) {
+    return Text(
+      title,
+      overflow: TextOverflow.ellipsis,
+      maxLines: 1,
+      softWrap: false,
+      style: TextStyle(
+        fontSize: 16,
+        decoration: status == "completed" ? TextDecoration.lineThrough : null,
       ),
     );
   }

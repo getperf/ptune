@@ -15,6 +15,8 @@ class TaskTile extends ConsumerWidget {
     final pomodoro = task.pomodoro;
     final planned = pomodoro?.planned ?? 0;
     final isFormVisible = ref.watch(isFormVisibleProvider);
+    final parentTitle = row.parentTitle;
+    final parentTitleColor = Theme.of(context).textTheme.bodySmall?.color;
 
     return InkWell(
       onTap: () => controller.onTaskTapped(task),
@@ -39,18 +41,25 @@ class TaskTile extends ConsumerWidget {
                   : () => controller.toggleTask(task.id),
             ),
             Expanded(
-              child: Text(
-                task.title,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-                softWrap: false,
-                style: TextStyle(
-                  fontSize: 16,
-                  decoration: task.status == "completed"
-                      ? TextDecoration.lineThrough
-                      : null,
-                ),
-              ),
+              child: parentTitle == null
+                  ? _buildTaskTitle(task.title, task.status)
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          parentTitle,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                          softWrap: false,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: parentTitleColor,
+                          ),
+                        ),
+                        _buildTaskTitle(task.title, task.status),
+                      ],
+                    ),
             ),
             if (pomodoro != null && planned > 0)
               Text(pomodoro.toDisplayString()),
@@ -77,6 +86,19 @@ class TaskTile extends ConsumerWidget {
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildTaskTitle(String title, String status) {
+    return Text(
+      title,
+      overflow: TextOverflow.ellipsis,
+      maxLines: 1,
+      softWrap: false,
+      style: TextStyle(
+        fontSize: 16,
+        decoration: status == "completed" ? TextDecoration.lineThrough : null,
       ),
     );
   }

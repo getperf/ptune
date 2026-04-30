@@ -15,7 +15,12 @@ final currentDropIndicatorProvider = StateProvider<DropIndicator?>(
 
 class DraggableTaskList extends ConsumerStatefulWidget {
   final List<MyTask> allTasks;
-  const DraggableTaskList({super.key, required this.allTasks});
+  final List<MyTask>? parentLookupTasks;
+  const DraggableTaskList({
+    super.key,
+    required this.allTasks,
+    this.parentLookupTasks,
+  });
 
   @override
   ConsumerState<DraggableTaskList> createState() => _DraggableTaskListState();
@@ -28,7 +33,10 @@ class _DraggableTaskListState extends ConsumerState<DraggableTaskList> {
   Widget build(BuildContext context) {
     final controller = ref.read(homeControllerProvider(context));
     // final rows = flattenTasksHierarchically(widget.allTasks);
-    final rows = TaskRowsBuilder.build(widget.allTasks);
+    final rows = TaskRowsBuilder.build(
+      widget.allTasks,
+      parentLookupTasks: widget.parentLookupTasks,
+    );
     final drops = buildDropPoints(rows);
 
     final children = <Widget>[];

@@ -3,7 +3,8 @@ import 'package:ptune/models/my_task.dart';
 class TaskRow {
   final MyTask task;
   final int depth;
-  TaskRow(this.task, this.depth);
+  final String? parentTitle;
+  TaskRow(this.task, this.depth, {this.parentTitle});
 
   @override
   bool operator ==(Object other) =>
