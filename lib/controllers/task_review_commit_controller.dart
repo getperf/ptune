@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ptune/models/my_task.dart';
+import 'package:ptune/providers/task_review/operation_miss_candidate_provider.dart';
 import 'package:ptune/providers/task_review/task_review_provider.dart';
 import 'package:ptune/providers/task_review/task_review_state.dart';
 import 'package:ptune/providers/timer_completed_task_provider.dart';
@@ -57,6 +58,13 @@ class TaskReviewCommitController {
 
   void _clearStates(MyTask completedTask) {
     ref.read(taskReviewProvider(completedTask.id).notifier).clear();
+    final candidateNotifier = ref.read(
+      operationMissCandidateTaskIdsProvider.notifier,
+    );
+    candidateNotifier.state = {
+      for (final taskId in candidateNotifier.state)
+        if (taskId != completedTask.id) taskId,
+    };
     ref.read(completedTimerTaskProvider.notifier).state = null;
   }
 }

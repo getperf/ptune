@@ -26,6 +26,12 @@ class TaskReviewNotifier extends StateNotifier<TaskReviewState> {
     state = state.copyWith(selected: next);
   }
 
+  void ensureSelected(ReviewFlag flag) {
+    if (state.selected.contains(flag)) return;
+
+    state = state.copyWith(selected: {...state.selected, flag});
+  }
+
   void setGoal(String? value) {
     final trimmed = (value == null || value.trim().isEmpty)
         ? null

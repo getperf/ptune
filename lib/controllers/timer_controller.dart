@@ -1,27 +1,28 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:ptune/providers/task_review/task_review_provider.dart';
-import 'package:ptune/providers/timer_completed_task_provider.dart';
-import 'package:ptune/providers/timer_event_provider.dart';
-import 'package:ptune/states/blink_notifier.dart';
-import 'package:ptune/states/over_limit_state.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:ptune/controllers/auto_safe_guard.dart';
 import 'package:ptune/controllers/ticking_timer.dart';
 import 'package:ptune/models/my_task_ext.dart';
 import 'package:ptune/models/pomodoro_scheduler.dart';
 import 'package:ptune/models/pomodoro_session.dart';
 import 'package:ptune/models/session_type.dart';
+import 'package:ptune/models/timer_phase.dart';
 import 'package:ptune/providers/pomodoro_scheduler_provider.dart';
 import 'package:ptune/providers/pomodoro_summary_provider.dart';
-import 'package:ptune/providers/timer_notification_service_provider.dart';
 import 'package:ptune/providers/task_provider.dart';
+import 'package:ptune/providers/task_review/operation_miss_candidate_provider.dart';
+import 'package:ptune/providers/task_review/task_review_provider.dart';
+import 'package:ptune/providers/timer_completed_task_provider.dart';
+import 'package:ptune/providers/timer_event_provider.dart';
+import 'package:ptune/providers/timer_notification_service_provider.dart';
 import 'package:ptune/states/auto_mode_state.dart';
+import 'package:ptune/states/blink_notifier.dart';
+import 'package:ptune/states/over_limit_state.dart';
 import 'package:ptune/states/remaining_time_state.dart';
 import 'package:ptune/states/timer_phase_state.dart';
-import 'package:ptune/models/timer_phase.dart';
 import 'package:ptune/utils/logger.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 /// TimerController:
 /// Pomodoroセッションの制御ロジック全体を担うコントローラ。
@@ -173,15 +174,25 @@ class TimerController {
         .read(timerNotificationServiceProvider)
         .onSessionCompleted(currentType);
 
+    final task = ref.read(selectedTimerTaskProvider);
     final guard = AutoSafeGuard(
       controller: this,
       autoMode: ref.read(autoModeProvider),
-      task: ref.read(selectedTimerTaskProvider),
+      task: task,
     );
 
     final canProceed = await guard.evaluateAfterSession();
 
     if (!canProceed) {
+      if (task != null) {
+        final candidateNotifier = ref.read(
+          operationMissCandidateTaskIdsProvider.notifier,
+        );
+        candidateNotifier.state = {...candidateNotifier.state, task.id};
+        logger.i(
+          "[TimerController] operation miss review candidate set: ${task.id}",
+        );
+      }
       ref.read(overLimitProvider.notifier).state = true;
       await _proceedToNextSession(skipBreak: true, autoStart: false);
       return;

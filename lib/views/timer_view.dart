@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:ptune/controllers/task_review_commit_controller.dart';
+import 'package:ptune/models/review_flag.dart';
 import 'package:ptune/models/my_task.dart';
 import 'package:ptune/providers/pomodoro_scheduler_provider.dart';
 import 'package:ptune/providers/task_provider.dart';
+import 'package:ptune/providers/task_review/operation_miss_candidate_provider.dart';
 import 'package:ptune/providers/task_review/task_review_provider.dart';
 import 'package:ptune/providers/timer_completed_task_provider.dart';
 import 'package:ptune/providers/timer_controller_provider.dart';
@@ -79,7 +81,18 @@ class TimerView extends ConsumerWidget {
         '${next?.id ?? 'null'}:${next?.status ?? '-'}',
       );
       if (next != null) {
-        ref.read(taskReviewProvider(next.id).notifier).initFromTask(next);
+        final reviewNotifier = ref.read(taskReviewProvider(next.id).notifier);
+        reviewNotifier.initFromTask(next);
+
+        final operationMissCandidates = ref.read(
+          operationMissCandidateTaskIdsProvider,
+        );
+        if (operationMissCandidates.contains(next.id)) {
+          reviewNotifier.ensureSelected(ReviewFlag.operationMiss);
+          logger.i(
+            '[TimerView] operation miss review default applied: ${next.id}',
+          );
+        }
       }
     });
     ref.listen<MyTask?>(selectedTimerTaskProvider, (previous, next) {
