@@ -41,7 +41,18 @@ class TaskOrderService {
       return ap.compareTo(bp);
     });
 
-    final parents = sorted.where((t) => t.parent == null).toList();
+    final taskIds = sorted.map((t) => t.id).toSet();
+    // A page boundary or a deleted remote parent can leave a child without its
+    // parent in this response. Treat it as a visible root instead of silently
+    // dropping it from the UI.
+    final parents = sorted
+        .where(
+          (t) =>
+              t.parent == null ||
+              t.parent!.isEmpty ||
+              !taskIds.contains(t.parent),
+        )
+        .toList();
 
     final Map<String, List<MyTask>> children = {};
 

@@ -5,14 +5,13 @@ import 'package:ptune/exceptions/task_service_exception.dart';
 import 'package:ptune/models/my_task.dart';
 import 'package:ptune/models/my_task_notes_encoder.dart';
 import 'package:ptune/providers/task_list_provider.dart';
-import 'package:ptune/services/auth/google_auth_client.dart';
 import 'package:ptune/factories/task_factory.dart';
 import 'package:ptune/utils/logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class RemoteTaskService {
   final Ref ref;
-  final GoogleAuthClient authClient;
+  final http.Client authClient;
   final TaskFactory taskFactory = TaskFactory();
 
   RemoteTaskService(this.ref, this.authClient);
@@ -32,20 +31,35 @@ class RemoteTaskService {
   // =========================
   Future<List<MyTask>> fetchTasks() async {
     final taskListId = await _getTaskListId();
-    final url = Uri.parse(
-      '$_baseUrl/lists/$taskListId/tasks?showCompleted=true&showHidden=true',
-    );
+    final tasks = <MyTask>[];
+    String? pageToken;
 
-    final response = await authClient.get(url);
+    do {
+      final queryParameters = <String, String>{
+        'showCompleted': 'true',
+        'showHidden': 'true',
+        // Google Tasks returns only 20 tasks by default. Request the largest
+        // supported page and still follow nextPageToken for larger lists.
+        'maxResults': '100',
+      };
+      if (pageToken != null) queryParameters['pageToken'] = pageToken;
 
-    if (response.statusCode >= 400) {
-      _handleErrorResponse(response);
-    }
+      final url = Uri.parse('$_baseUrl/lists/$taskListId/tasks').replace(
+        queryParameters: queryParameters,
+      );
+      final response = await authClient.get(url);
 
-    final data = jsonDecode(response.body);
-    final tasks = (data['items'] as List<dynamic>? ?? [])
-        .map((json) => taskFactory.fromApiData(json))
-        .toList();
+      if (response.statusCode >= 400) {
+        _handleErrorResponse(response);
+      }
+
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      tasks.addAll(
+        (data['items'] as List<dynamic>? ?? [])
+            .map((json) => taskFactory.fromApiData(json as Map<String, dynamic>)),
+      );
+      pageToken = data['nextPageToken'] as String?;
+    } while (pageToken != null && pageToken.isNotEmpty);
 
     logger.i("=== FETCH ORDER (API) ===");
 
