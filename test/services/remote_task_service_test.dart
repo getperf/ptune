@@ -36,10 +36,14 @@ void main() {
         200,
       );
     });
-    final container = ProviderContainer();
+    final container = ProviderContainer(
+      overrides: [
+        selectedTaskListProvider.overrideWith(
+          (ref) => const MyTaskList(id: 'list-id', title: 'Today'),
+        ),
+      ],
+    );
     addTearDown(container.dispose);
-    container.read(selectedTaskListProvider.notifier).state =
-        const MyTaskList(id: 'list-id', title: 'Today');
 
     final serviceProvider = Provider<RemoteTaskService>(
       (ref) => RemoteTaskService(ref, client),
