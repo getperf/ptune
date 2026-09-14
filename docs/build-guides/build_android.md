@@ -1,12 +1,12 @@
-# Android ビルド手順（準備中）
+# Android ビルド手順
 
-このページでは、ptune の Android 向けビルド手順を公開予定です。
+このページは、ptune の Android 向けビルド手順である。
 
-- Flutter セットアップ
-- デバッグビルド
-- リリースビルド（Play Store 用）
+- Flutter セットアップ → §1〜§9
+- デバッグビルド → §10・§11
+- リリースビルド（Play Store 用）→ §12
 
-正式なリリース準備が整い次第、詳細な手順と設定例を追加します。
+**リリースビルドは §12 にある**（2026-09-14 に追記）。署名・鍵の指紋の登録・`.env` の焼き込み・R8 の扱いはそこを見ること。
 
 
 ## 1. Windows 11 初期セットアップ
@@ -254,3 +254,120 @@ USB デバッグを有効化後：
 ```powershell
 flutter run -d device
 ```
+
+---
+
+## 12. リリースビルド（Android）
+
+### 12-1. 前提の版
+
+**Flutter 3.47.4 / Dart 3.13.3 に合わせてある**（2026-09-14 に追従）。
+
+| | 値 | 決まり方 |
+|---|---|---|
+| Flutter / Dart | 3.47.4 / 3.13.3 | |
+| Gradle | **8.14.5** | Flutter 3.47.4 の下限が 8.14.0 |
+| AGP | **8.11.2** | KGP 2.2.x と組めるのは 8.12 未満まで |
+| Kotlin（KGP） | **2.2.21** | Flutter 3.47.4 の下限が 2.2.20 |
+| JDK | 21 | |
+
+**この3つは同時にしか動かせない。** Flutter は KGP↔AGP・AGP↔Gradle・KGP↔Gradle の3つの互換表を
+同時に見ており、1つだけ上げると弾かれる。版は `android/settings.gradle.kts`（AGP・KGP）と
+`android/gradle/wrapper/gradle-wrapper.properties`（Gradle）にある。
+
+ビルド時に「will soon be dropped」の警告が3つ出るが、**error の下限は越えているので通る。**
+
+**`--android-skip-build-dependency-validation` は使わないこと。** 検査を黙らせるだけで、実際に
+噛み合わなくなったときに理由が見えなくなる。
+
+### 12-2. 署名の準備
+
+`android/key.properties` を置く。**git 管理外である**（`android/.gitignore`）。
+
+```properties
+storeFile=ptune-release-key.jks
+storePassword=＜秘密＞
+keyAlias=ptune
+keyPassword=＜秘密＞
+```
+
+keystore は `android/app/ptune-release-key.jks` に置く。`storeFile` は **`android/app/` 起点**で
+解決される（`app/build.gradle.kts` の `file(...)`）。
+
+**`key.properties` が無くてもビルドは進む。** `storePassword` などが null のまま release の署名設定が
+作られ、**署名の段になって落ちる。** 「鍵が無い」とは言ってくれない。
+
+### 12-3. release 鍵の指紋を登録する
+
+```powershell
+keytool -list -v -keystore android/app/ptune-release-key.jks -alias ptune
+```
+
+出た **SHA-1 と SHA-256 を、Firebase Console と Google Cloud の OAuth クライアントへ登録する。**
+
+**debug 鍵とは別物である。** 登録していないと、**ビルドもインストールも通り、認可だけが実機で
+落ちる。** 切り分けにいちばん時間を取られる形なので、実機へ入れる前に確かめること。
+
+現在の鍵（2026-09-14 実測）:
+
+```
+SHA1:   45:4B:03:C8:A4:B5:D2:9C:05:15:F1:09:7F:B8:0F:C6:E3:B6:E1:B9
+SHA256: 11:74:A2:7F:52:64:CD:0D:35:0C:C6:C3:14:96:A9:DE:F0:75:80:08:10:BF:B7:91:EF:3E:03:55:69:D7:06:9D
+```
+
+### 12-4. 建てる
+
+```powershell
+flutter clean                       # 足場を上げた直後は必ず挟む
+flutter pub get
+flutter build apk --release         # 実機検証用
+flutter build appbundle --release   # Play Store 提出用
+```
+
+出力。
+
+```text
+build\app\outputs\flutter-apk\app-release.apk
+build\app\outputs\bundle\release\app-release.aab
+```
+
+**`flutter clean` を省かない。** Flutter や Gradle を上げた直後は、古い `build/` に残った assets が
+新しい Flutter の複製と衝突して落ちる（2026-09-14 に実際に踏んだ）。
+
+```text
+PathExistsException: Cannot copy file to '...\flutter_assets\assets/tasks.json'
+(OS Error: 既に存在するファイルを作成することはできません。, errno = 183)
+```
+
+### 12-5. 署名を確かめる
+
+**「建った」と「release 鍵で署名された」は別である。**
+
+```powershell
+$apksigner = "$env:LOCALAPPDATA\Android\Sdk\build-tools\36.0.0\apksigner.bat"
+& $apksigner verify --print-certs build\app\outputs\flutter-apk\app-release.apk
+```
+
+出た `Signer #1 certificate SHA-1 digest` が **12-3 の SHA-1 と一致すること**を見る。
+debug 鍵で署名されていたらここで分かる。
+
+### 12-6. 実機へ入れる
+
+```powershell
+adb devices
+adb install -r build\app\outputs\flutter-apk\app-release.apk
+```
+
+### 12-7. `.env` は版に焼かれる
+
+`USE_DEMO_SERVICE` / `AUTH_PROVIDER` / `GOOGLE_CLIENT_ID` は assets の `.env` から読まれ、
+**ビルドした時点の内容が APK に入る**（`flutter_dotenv`）。デモモードのまま出さないよう、
+**建てる前に `.env` を確認すること。**
+
+### 12-8. release は R8 を通していない
+
+`android/app/build.gradle.kts` の release は `isMinifyEnabled = false` /
+`isShrinkResources = false` である。難読化も未使用リソースの削除もしない。
+
+**Play Store へ出す前に、通すかどうかを決めること。** 通すなら Firebase と Google Sign-In の
+keep 規則が要る（通した直後に認可だけが落ちる形になりやすい）。
