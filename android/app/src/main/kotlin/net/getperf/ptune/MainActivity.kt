@@ -21,7 +21,7 @@ class MainActivity : FlutterActivity() {
                 try {
                     when (call.method) {
                         "status" -> result.success(mapOf(
-                            "allowed" to getSystemService(NotificationManager::class.java).areNotificationsEnabled(),
+                            "allowed" to TimerNotifications.enabled(this),
                             "exactRequired" to (Build.VERSION.SDK_INT >= 31),
                             "exactAllowed" to (Build.VERSION.SDK_INT < 31 || getSystemService(AlarmManager::class.java).canScheduleExactAlarms())
                         ))
@@ -43,6 +43,21 @@ class MainActivity : FlutterActivity() {
                         }
                         "exactSettings" -> {
                             if (Build.VERSION.SDK_INT >= 31) startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:$packageName")))
+                            result.success(null)
+                        }
+                        "send" -> {
+                            TimerNotifications.show(this, call.argument<String>("title") ?: "", call.argument<String>("body") ?: "")
+                            result.success(null)
+                        }
+                        "schedule" -> {
+                            TimerNotifications.schedule(this, call.argument<String>("sessionId")!!,
+                                call.argument<Number>("at")!!.toLong(), call.argument<String>("title") ?: "", call.argument<String>("body") ?: "")
+                            result.success(null)
+                        }
+                        "cancel" -> { TimerNotifications.cancel(this); result.success(null) }
+                        "complete" -> {
+                            TimerNotifications.complete(this, call.argument<String>("sessionId")!!,
+                                call.argument<String>("title") ?: "", call.argument<String>("body") ?: "")
                             result.success(null)
                         }
                         else -> result.notImplemented()

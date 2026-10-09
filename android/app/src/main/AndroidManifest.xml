@@ -5,6 +5,7 @@
         android:label="ptune"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <receiver android:name=".TimerAlarmReceiver" android:exported="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

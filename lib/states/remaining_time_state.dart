@@ -4,12 +4,12 @@ import 'package:ptune/utils/logger.dart';
 
 final remainingTimeProvider =
     StateNotifierProvider<RemainingTimeState, MyTimerState>((ref) {
-  logger.i("[Provider] remainingTimeProvider created");
-  ref.onDispose(() {
-    logger.i("[Provider] remainingTimeProvider disposed ❗");
-  });
-  return RemainingTimeState();
-});
+      logger.i("[Provider] remainingTimeProvider created");
+      ref.onDispose(() {
+        logger.i("[Provider] remainingTimeProvider disposed ❗");
+      });
+      return RemainingTimeState();
+    });
 
 class RemainingTimeState extends StateNotifier<MyTimerState> {
   RemainingTimeState() : super(const MyTimerState(remaining: 0, total: 0)) {
@@ -18,6 +18,8 @@ class RemainingTimeState extends StateNotifier<MyTimerState> {
 
   DateTime? _endTime;
   DateTime? _pausedAt;
+
+  DateTime? get endTime => _endTime;
 
   void start(int durationSec) {
     _endTime = DateTime.now().add(Duration(seconds: durationSec));
@@ -72,10 +74,12 @@ class RemainingTimeState extends StateNotifier<MyTimerState> {
 
     var remaining = 0;
     if (_pausedAt != null) {
-      remaining = _endTime!.difference(_pausedAt!).inSeconds;
+      remaining = (_endTime!.difference(_pausedAt!).inMilliseconds / 1000)
+          .ceil();
       logger.d("[_update] paused - remaining = $remaining, state = $state");
     } else {
-      remaining = _endTime!.difference(DateTime.now()).inSeconds;
+      remaining = (_endTime!.difference(DateTime.now()).inMilliseconds / 1000)
+          .ceil();
       logger.d("[_update] running - remaining = $remaining, state = $state");
     }
     state = MyTimerState(

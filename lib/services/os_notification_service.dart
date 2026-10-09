@@ -36,4 +36,44 @@ class OsNotificationService {
   Future<void> openSettings() => _channel.invokeMethod<void>('settings');
   Future<void> openExactSettings() =>
       _channel.invokeMethod<void>('exactSettings');
+
+  Future<void> send(String title, String body) async {
+    if (supported) {
+      await _channel.invokeMethod<void>('send', {'title': title, 'body': body});
+    }
+  }
+
+  Future<void> schedule({
+    required String sessionId,
+    required DateTime at,
+    required String title,
+    required String body,
+  }) async {
+    if (supported) {
+      await _channel.invokeMethod<void>('schedule', {
+        'sessionId': sessionId,
+        'at': at.millisecondsSinceEpoch,
+        'title': title,
+        'body': body,
+      });
+    }
+  }
+
+  Future<void> cancel() async {
+    if (supported) await _channel.invokeMethod<void>('cancel');
+  }
+
+  Future<void> complete({
+    required String sessionId,
+    required String title,
+    required String body,
+  }) async {
+    if (supported) {
+      await _channel.invokeMethod<void>('complete', {
+        'sessionId': sessionId,
+        'title': title,
+        'body': body,
+      });
+    }
+  }
 }

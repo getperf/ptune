@@ -45,6 +45,8 @@ class TimerController {
 
   /// 終了前のアラーム検知フラグ
   bool _hasWarnedAlmostFinished = false;
+  bool _completionInProgress = false;
+  int _transitionVersion = 0;
 
   TimerController(this.ref, this.scheduler) {
     logger.i("[TimerController] initialized");
@@ -55,6 +57,7 @@ class TimerController {
   /// - 残り時間を減少させ、0になったらセッションを終了
   /// - セッション状態をログ出力
   Future<void> _tick() async {
+    if (_completionInProgress || !_timer.isRunning) return;
     final sw = Stopwatch()..start();
     final phase = ref.read(timerPhaseProvider);
     final remainingTime = ref.read(remainingTimeProvider.notifier);
@@ -82,7 +85,7 @@ class TimerController {
 
     logger.d("[tick] remaining: $timerState $_session");
 
-    if (timerState.remaining <= 0) {
+    if (timerState.remaining <= 0 && _timer.isRunning) {
       await _onSessionComplete();
     }
     sw.stop();
@@ -135,6 +138,7 @@ class TimerController {
   Future<void> _proceedToNextSession({
     required bool skipBreak,
     required bool autoStart,
+    bool notifyAutomaticStart = true,
   }) async {
     _resetSessionState();
     SessionType nextType = scheduler.startNext();
@@ -151,7 +155,7 @@ class TimerController {
 
     ref.read(timerPhaseProvider.notifier).state = TimerPhase.ready;
     if (autoStart) {
-      start(); // 自動開始
+      start(automaticStart: notifyAutomaticStart); // 自動開始
     } else {
       stop(); // 手動待機
     }
@@ -164,44 +168,49 @@ class TimerController {
 
   /// セッション完了時に呼ばれる処理
   Future<void> _onSessionComplete() async {
+    if (_completionInProgress) return;
+    _completionInProgress = true;
+    _timer.stop();
+    final version = _transitionVersion;
     final currentType = ref.read(sessionTypeProvider);
+    try {
+      // OS通知はタスク保存・リモート同期より先に処理する。
+      await ref
+          .read(timerNotificationServiceProvider)
+          .onSessionCompleted(currentType);
 
-    // ① セッション確定処理
-    await _finalizeSessionAndApply();
+      await _finalizeSessionAndApply();
+      if (version != _transitionVersion) return;
 
-    // ② 通知（WORKのみ内部で判定）
-    await ref
-        .read(timerNotificationServiceProvider)
-        .onSessionCompleted(currentType);
+      final task = ref.read(selectedTimerTaskProvider);
+      final guard = AutoSafeGuard(
+        controller: this,
+        autoMode: ref.read(autoModeProvider),
+        task: task,
+      );
+      final canProceed = await guard.evaluateAfterSession();
 
-    final task = ref.read(selectedTimerTaskProvider);
-    final guard = AutoSafeGuard(
-      controller: this,
-      autoMode: ref.read(autoModeProvider),
-      task: task,
-    );
-
-    final canProceed = await guard.evaluateAfterSession();
-
-    if (!canProceed) {
-      if (task != null) {
-        final candidateNotifier = ref.read(
-          operationMissCandidateTaskIdsProvider.notifier,
-        );
-        candidateNotifier.state = {...candidateNotifier.state, task.id};
-        logger.i(
-          "[TimerController] operation miss review candidate set: ${task.id}",
-        );
+      if (!canProceed) {
+        if (task != null) {
+          final candidateNotifier = ref.read(
+            operationMissCandidateTaskIdsProvider.notifier,
+          );
+          candidateNotifier.state = {...candidateNotifier.state, task.id};
+          logger.i(
+            "[TimerController] operation miss review candidate set: ${task.id}",
+          );
+        }
+        ref.read(overLimitProvider.notifier).state = true;
+        await _proceedToNextSession(skipBreak: true, autoStart: false);
+        return;
       }
-      ref.read(overLimitProvider.notifier).state = true;
-      await _proceedToNextSession(skipBreak: true, autoStart: false);
-      return;
+
+      final isAuto = ref.read(autoModeProvider).isAutoEnabled;
+      await _proceedToNextSession(skipBreak: false, autoStart: isAuto);
+    } finally {
+      _completionInProgress = false;
     }
-
-    final isAuto = ref.read(autoModeProvider).isAutoEnabled;
-    await _proceedToNextSession(skipBreak: false, autoStart: isAuto);
   }
-
   /// 完了タスクの「一時的な復帰」を必要に応じて行う
   /// - IMPORTANT: タスク切替時には selectedTimerTask を上書きしない
   Future<void> _revertCompletedTaskIfNeeded({String? intendedTaskId}) async {
@@ -244,7 +253,9 @@ class TimerController {
   }
 
   /// タイマー開始（初回時にtick即時実行）
-  void start() {
+  void start({bool automaticStart = false}) {
+    if (_timer.isRunning || (_completionInProgress && !automaticStart)) return;
+    ++_transitionVersion;
     final task = ref.read(selectedTimerTaskProvider);
     logger.i(
       "[TimerController] start() task=${task?.id ?? 'none'} title=${task?.title ?? 'タスクなし'} "
@@ -278,6 +289,14 @@ class TimerController {
     if (!_timer.isRunning) {
       _timer.start();
     }
+    ref
+        .read(timerNotificationServiceProvider)
+        .onTimerRunning(
+          type,
+          ref.read(remainingTimeProvider.notifier).endTime,
+          newSession: phase == TimerPhase.ready,
+          automaticStart: automaticStart && phase == TimerPhase.ready,
+        );
     _tick(); // 即時tick実行で反応を早く
     WakelockPlus.enable();
     logger.i("[TimerController] timer started: $type ($durationSec sec)");
@@ -305,6 +324,13 @@ class TimerController {
     if (timerPhase == TimerPhase.paused) {
       // ★ intendedTaskId を渡して「完了タスク復帰で上書き」されないようにする
       resume(intendedTaskId: next.id);
+    } else if (timerPhase == TimerPhase.running) {
+      ref
+          .read(timerNotificationServiceProvider)
+          .onTimerRunning(
+            ref.read(sessionTypeProvider),
+            ref.read(remainingTimeProvider.notifier).endTime,
+          );
     }
 
     logger.i("[TimerController] switch task");
@@ -312,6 +338,8 @@ class TimerController {
 
   /// タイマーを一時停止
   void pause() {
+    ++_transitionVersion;
+    ref.read(timerNotificationServiceProvider).cancel();
     if (!_timer.isRunning) {
       logger.w("[TimerController] pause() ignored: not running");
       return;
@@ -330,7 +358,10 @@ class TimerController {
   /// タイマーを再開
   /// - intendedTaskId を指定すると、完了タスク復帰が別タスクに干渉しない
   void resume({String? intendedTaskId}) async {
+    if (_completionInProgress) return;
+    final version = _transitionVersion;
     await _revertCompletedTaskIfNeeded(intendedTaskId: intendedTaskId);
+    if (version != _transitionVersion) return;
 
     if (_timer.isRunning) {
       logger.w("[TimerController] resume() ignored: already running");
@@ -338,8 +369,15 @@ class TimerController {
     }
 
     ref.read(remainingTimeProvider.notifier).resume();
+    ++_transitionVersion;
     ref.read(timerPhaseProvider.notifier).state = TimerPhase.running;
     _timer.start();
+    ref
+        .read(timerNotificationServiceProvider)
+        .onTimerRunning(
+          ref.read(sessionTypeProvider),
+          ref.read(remainingTimeProvider.notifier).endTime,
+        );
     _tick();
 
     final task = ref.read(selectedTimerTaskProvider);
@@ -355,6 +393,8 @@ class TimerController {
 
   /// タイマー完全停止、状態リセット
   void stop() {
+    ++_transitionVersion;
+    ref.read(timerNotificationServiceProvider).cancel();
     if (_timer.isRunning) {
       _timer.stop();
       logger.i("[TimerController] _timer stopped");
@@ -369,18 +409,30 @@ class TimerController {
 
   /// 現在のセッションをスキップ(停止)してリセット
   Future<void> reset() async {
+    if (_completionInProgress) return;
+    ++_transitionVersion;
+    final version = _transitionVersion;
+    _timer.stop();
+    ref.read(timerNotificationServiceProvider).cancel();
     final selected = ref.read(selectedTimerTaskProvider);
     await _revertCompletedTaskIfNeeded(intendedTaskId: selected?.id);
 
     await _finalizeSessionAndApply();
+    if (version != _transitionVersion) return;
     final isAuto = ref.read(autoModeProvider).isAutoEnabled;
-    await _proceedToNextSession(skipBreak: true, autoStart: isAuto);
+    await _proceedToNextSession(
+      skipBreak: true,
+      autoStart: isAuto,
+      notifyAutomaticStart: false,
+    );
 
     logger.i("[TimerController] session resetted");
   }
 
   // タイマーとスケジューラのリセット
   Future<void> resetTimerState() async {
+    ++_transitionVersion;
+    ref.read(timerNotificationServiceProvider).cancel();
     if (_timer.isRunning) _timer.stop();
     ref.read(remainingTimeProvider.notifier).stop();
     WakelockPlus.disable();
@@ -434,6 +486,7 @@ class TimerController {
 
   /// リソース解放（タイマー停止）
   void dispose() {
+    ++_transitionVersion;
     logger.i("[TimerController] dispose() called");
     _timer.stop();
   }
