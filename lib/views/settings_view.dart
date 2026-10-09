@@ -7,6 +7,7 @@ import 'package:ptune/states/theme_mode_provider.dart';
 import 'package:ptune/states/haptic_setting.dart';
 import 'package:ptune/states/haptic_setting_provider.dart';
 import 'package:ptune/utils/logger.dart';
+import 'package:ptune/views/settings/timer_notification_section.dart';
 
 class SettingsView extends ConsumerWidget {
   const SettingsView({super.key});
@@ -30,92 +31,98 @@ class SettingsView extends ConsumerWidget {
           },
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            SwitchListTile(
-              title: const Text("自動モードを有効にする"),
-              value: autoEnabled,
-              onChanged: (value) => controller.setAutoMode(value),
-            ),
-            SwitchListTile(
-              title: const Text("止め忘れ防止を有効にする"),
-              value: safeEnabled,
-              onChanged: autoEnabled
-                  ? (value) => controller.setSafeMode(value)
-                  : null, // 無効時は触れない
-            ),
-            SwitchListTile(
-              title: const Text('ダークモード'),
-              subtitle: const Text('ONにするとダークテーマになります'),
-              value: themeMode == ThemeMode.dark,
-              onChanged: controller.toggleDarkMode,
-            ),
-            const Text("バイブ通知", style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            SegmentedButton<HapticSetting>(
-              segments: HapticSetting.values
-                  .map(
-                    (e) => ButtonSegment<HapticSetting>(
-                      value: e,
-                      label: Text(e.label),
-                    ),
-                  )
-                  .toList(),
-              selected: {hapticSetting},
-              onSelectionChanged: (selection) {
-                controller.setHapticSetting(selection.first);
-              },
-            ),
-            ListTile(
-              title: const Text('ログをエクスポート'),
-              subtitle: const Text('アプリの動作ログを保存します'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () async {
-                try {
-                  final msg = await controller.exportLogFile();
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text(msg)));
-                } catch (e, st) {
-                  logger.e(
-                    "[SettingsView] Failed to export log file: $e",
-                    error: e,
-                    stackTrace: st,
-                  );
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("ログのエクスポートに失敗しました。")),
-                  );
-                }
-              },
-            ),
-            ListTile(
-              title: const Text('ログを削除'),
-              subtitle: const Text('アプリの動作ログを削除します'),
-              trailing: const Icon(Icons.delete_outline),
-              onTap: () async {
-                try {
-                  final msg = await controller.deleteLogFile();
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text(msg)));
-                } catch (e, st) {
-                  logger.e(
-                    "[SettingsView] Failed to delete log file",
-                    error: e,
-                    stackTrace: st,
-                  );
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("ログの削除に失敗しました。")),
-                  );
-                }
-              },
-            ),
-          ],
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              SwitchListTile(
+                title: const Text("自動モードを有効にする"),
+                value: autoEnabled,
+                onChanged: (value) => controller.setAutoMode(value),
+              ),
+              SwitchListTile(
+                title: const Text("止め忘れ防止を有効にする"),
+                value: safeEnabled,
+                onChanged: autoEnabled
+                    ? (value) => controller.setSafeMode(value)
+                    : null, // 無効時は触れない
+              ),
+              SwitchListTile(
+                title: const Text('ダークモード'),
+                subtitle: const Text('ONにするとダークテーマになります'),
+                value: themeMode == ThemeMode.dark,
+                onChanged: controller.toggleDarkMode,
+              ),
+              const TimerNotificationSection(),
+              const Text(
+                "スマホ本体の振動",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              SegmentedButton<HapticSetting>(
+                segments: HapticSetting.values
+                    .map(
+                      (e) => ButtonSegment<HapticSetting>(
+                        value: e,
+                        label: Text(e.label),
+                      ),
+                    )
+                    .toList(),
+                selected: {hapticSetting},
+                onSelectionChanged: (selection) {
+                  controller.setHapticSetting(selection.first);
+                },
+              ),
+              ListTile(
+                title: const Text('ログをエクスポート'),
+                subtitle: const Text('アプリの動作ログを保存します'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () async {
+                  try {
+                    final msg = await controller.exportLogFile();
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(msg)));
+                  } catch (e, st) {
+                    logger.e(
+                      "[SettingsView] Failed to export log file: $e",
+                      error: e,
+                      stackTrace: st,
+                    );
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("ログのエクスポートに失敗しました。")),
+                    );
+                  }
+                },
+              ),
+              ListTile(
+                title: const Text('ログを削除'),
+                subtitle: const Text('アプリの動作ログを削除します'),
+                trailing: const Icon(Icons.delete_outline),
+                onTap: () async {
+                  try {
+                    final msg = await controller.deleteLogFile();
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(msg)));
+                  } catch (e, st) {
+                    logger.e(
+                      "[SettingsView] Failed to delete log file",
+                      error: e,
+                      stackTrace: st,
+                    );
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("ログの削除に失敗しました。")),
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
         ),
       ),
 

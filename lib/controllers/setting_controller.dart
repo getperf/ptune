@@ -6,11 +6,34 @@ import 'package:ptune/states/haptic_setting_provider.dart';
 import 'package:ptune/providers/haptic_service_provider.dart';
 import 'package:ptune/utils/log_exporter.dart';
 import 'package:ptune/utils/logger.dart';
+import 'package:ptune/states/notification_settings_provider.dart';
+import 'package:ptune/states/notification_permission_provider.dart';
 
 class SettingsController {
   final WidgetRef ref;
 
   SettingsController(this.ref);
+
+  Future<void> setNotification({bool? startEnabled, bool? endEnabled}) async {
+    await ref
+        .read(notificationSettingsProvider.notifier)
+        .set(startEnabled: startEnabled, endEnabled: endEnabled);
+  }
+
+  Future<void> requestNotificationPermission() async {
+    await ref.read(osNotificationServiceProvider).request();
+    ref.invalidate(notificationPermissionProvider);
+  }
+
+  Future<void> openNotificationSettings({bool exact = false}) async {
+    final service = ref.read(osNotificationServiceProvider);
+    if (exact) {
+      await service.openExactSettings();
+    } else {
+      await service.openSettings();
+    }
+    ref.invalidate(notificationPermissionProvider);
+  }
 
   AutoMode get autoMode => ref.read(autoModeProvider);
 

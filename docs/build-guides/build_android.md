@@ -8,6 +8,23 @@
 
 **リリースビルドは §12 にある**（2026-09-14 に追記）。署名・鍵の指紋の登録・`.env` の焼き込み・R8 の扱いはそこを見ること。
 
+## Androidビルドツールの版（2026-10-10）
+
+現在のFlutter SDKの必須チェックに合わせ、Gradle Wrapperは8.14.3、
+Android Gradle Pluginは8.11.1、Kotlin Gradle Pluginは2.2.20を使用する。
+Gradle 8.12ではアプリのコンパイル前に最低版チェックで停止する。
+版は `android/gradle/wrapper/gradle-wrapper.properties` と
+`android/settings.gradle.kts` に固定する。
+
+```powershell
+flutter build apk --debug --no-pub
+flutter run --debug -d <device-id>
+```
+
+初回はGradleと依存関係のダウンロードで時間がかかる。
+将来の推奨版への警告と、必須条件のエラーは区別する。
+AGP 9への移行は今回の修正範囲に含めない。
+
 
 ## 1. Windows 11 初期セットアップ
 
