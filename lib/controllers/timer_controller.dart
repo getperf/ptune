@@ -71,11 +71,17 @@ class TimerController {
       ref.read(blinkStateProvider.notifier).startBlink(times: 3);
     }
 
-    if (timerState.remaining == 30 &&
+    if (timerState.remaining > 0 &&
+        timerState.remaining <= 30 &&
         phase == TimerPhase.running &&
         !_hasWarnedAlmostFinished) {
       _hasWarnedAlmostFinished = true;
       ref.read(timerEventProvider.notifier).notify("almost_finished");
+      unawaited(
+        ref
+            .read(timerNotificationServiceProvider)
+            .onSessionAlmostEnding(ref.read(sessionTypeProvider)),
+      );
     }
 
     if (elapsed - _lastCommitSecond >= 150) {
@@ -112,6 +118,8 @@ class TimerController {
     for (final t in updatedTasks) {
       await notifier.updateTask(t, commit: true);
     }
+    // 選択タスクは ID から最新状態を参照する。保存後は通知本文を更新する。
+    ref.read(timerNotificationServiceProvider).refresh();
   }
 
   /// セッション終了時の集計とリモート保存
@@ -174,7 +182,7 @@ class TimerController {
     final version = _transitionVersion;
     final currentType = ref.read(sessionTypeProvider);
     try {
-      // OS通知はタスク保存・リモート同期より先に処理する。
+      // 予告予約の取消と既存ハプティクスを、タスク保存より先に処理する。
       await ref
           .read(timerNotificationServiceProvider)
           .onSessionCompleted(currentType);

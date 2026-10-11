@@ -100,7 +100,7 @@ class _TimerNotificationSectionState
               : null,
         ),
         SwitchListTile(
-          title: const Text('作業終了を通知'),
+          title: const Text('作業終了30秒前を通知'),
           value: value?.endEnabled ?? false,
           onChanged: supported && value != null
               ? (v) => _set(endEnabled: v)

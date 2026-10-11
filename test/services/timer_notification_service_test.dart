@@ -31,7 +31,9 @@ class FakeOs extends OsNotificationService {
   final calls = <String>[];
   final delivered = <String>{};
   String? scheduled;
+  DateTime? scheduledAt;
   String? title;
+  String? body;
   bool failSchedule = false;
   @override
   bool get supported => true;
@@ -63,7 +65,9 @@ class FakeOs extends OsNotificationService {
     if (failSchedule) throw StateError('exact permission missing');
     calls.add('schedule');
     scheduled = sessionId;
+    scheduledAt = at;
     this.title = title;
+    this.body = body;
   }
 
   @override
@@ -95,7 +99,7 @@ void main() {
     parent: 'parent',
     pomodoro: PomodoroInfo(planned: 2, actual: 1.5),
   );
-  test('messages show actual only at start and use real break duration', () {
+  test('messages show actual and use real break duration', () {
     expect(TimerNotificationMessage.start(task, '親').body, '親\n検証\n🍅x2 ✅x1.5');
     final end = TimerNotificationMessage.end(
       task,
@@ -104,8 +108,8 @@ void main() {
       breakSeconds: 900,
       safeMode: false,
     );
-    expect(end.title, '🔴 作業終了 → 長い休憩(15分)');
-    expect(end.body, '親\n検証\n🍅x2');
+    expect(end.title, '🔴 まもなく作業終了 → 長い休憩(15分)');
+    expect(end.body, '親\n検証\n🍅x2 ✅x1.5');
     expect(
       TimerNotificationMessage.end(
         null,
@@ -114,7 +118,7 @@ void main() {
         breakSeconds: 300,
         safeMode: true,
       ).title,
-      '🔴 作業終了',
+      '🔴 まもなく作業終了',
     );
   });
   Future<(ProviderContainer, TimerNotificationService, FakeOs)> setup({
@@ -149,7 +153,8 @@ void main() {
       final at = DateTime.now().add(const Duration(minutes: 1));
       await service.onTimerRunning(SessionType.work, at, newSession: true);
       expect(os.calls, ['cancel', 'schedule']);
-      expect(os.title, '🔴 作業終了');
+      expect(os.title, '🔴 まもなく作業終了');
+      expect(os.scheduledAt, at.subtract(const Duration(seconds: 30)));
       final id = os.scheduled;
       await service.cancel();
       await service.onTimerRunning(SessionType.work, at);
@@ -172,6 +177,22 @@ void main() {
       expect(os.scheduled, isNull);
     },
   );
+  test('refresh updates reserved body with partially committed actual', () async {
+    final (container, service, os) = await setup();
+    await service.onTimerRunning(
+      SessionType.work,
+      DateTime.now().add(const Duration(minutes: 1)),
+      newSession: true,
+    );
+    final id = os.scheduled;
+    container.read(selectedTimerTaskProvider.notifier).state = task.copyWith(
+      pomodoro: const PomodoroInfo(planned: 2, actual: 2.4),
+    );
+    service.refresh();
+    await Future<void>.delayed(Duration.zero);
+    expect(os.scheduled, id);
+    expect(os.body, '検証\n🍅x2 ✅x2.4');
+  });
   test(
     'OS delivery followed by app completion does not duplicate end',
     () async {
@@ -182,7 +203,7 @@ void main() {
         newSession: true,
       );
       os.delivered.add(os.scheduled!);
-      await service.onSessionCompleted(SessionType.work);
+      await service.onSessionAlmostEnding(SessionType.work);
       expect(os.calls.where((c) => c == 'end'), isEmpty);
     },
   );
@@ -193,7 +214,7 @@ void main() {
       DateTime.now().add(const Duration(minutes: 1)),
       newSession: true,
     );
-    await service.onSessionCompleted(SessionType.work);
+    await service.onSessionAlmostEnding(SessionType.work);
     expect(os.calls.where((c) => c == 'end').length, 1);
   });
   test('turning end off cancels pending reservation', () async {
@@ -209,9 +230,40 @@ void main() {
         .set(endEnabled: false);
     await Future<void>.delayed(Duration.zero);
     expect(os.scheduled, isNull);
-    await service.onSessionCompleted(SessionType.work);
+    await service.onSessionAlmostEnding(SessionType.work);
     expect(os.calls.where((c) => c == 'end'), isEmpty);
   });
+  test(
+    'within 30 seconds warns once, and completion never sends another notification',
+    () async {
+      final (_, service, os) = await setup();
+      final at = DateTime.now().add(const Duration(seconds: 20));
+      await service.onTimerRunning(SessionType.work, at, newSession: true);
+      expect(os.calls, ['cancel', 'end']);
+      await service.onSessionAlmostEnding(SessionType.work);
+      await service.cancel();
+      await service.onTimerRunning(SessionType.work, at);
+      await service.onSessionCompleted(SessionType.work);
+      expect(os.calls.where((c) => c == 'end').length, 1);
+      expect(os.scheduled, isNull);
+    },
+  );
+
+  test(
+    'completion without a prior warning does not issue a late notification',
+    () async {
+      final (_, service, os) = await setup();
+      await service.onTimerRunning(
+        SessionType.work,
+        DateTime.now().add(const Duration(minutes: 1)),
+        newSession: true,
+      );
+      await service.onSessionCompleted(SessionType.work);
+      expect(os.calls.where((c) => c == 'end'), isEmpty);
+      expect(os.scheduled, isNull);
+    },
+  );
+
   test(
     'pause during preference load prevents late start and reservation',
     () async {

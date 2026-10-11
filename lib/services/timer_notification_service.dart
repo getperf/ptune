@@ -24,6 +24,7 @@ abstract class TimerNotificationService {
   Future<void> cancel();
   void refresh();
   void dispose();
+  Future<void> onSessionAlmostEnding(SessionType type);
   Future<void> onSessionCompleted(SessionType type);
 }
 
@@ -105,12 +106,17 @@ class TimerNotificationServiceImpl implements TimerNotificationService {
       if (settings.endEnabled &&
           endTime != null &&
           endTime.isAfter(DateTime.now())) {
-        await os.schedule(
-          sessionId: id,
-          at: endTime,
-          title: end.title,
-          body: end.body,
-        );
+        final warningTime = endTime.subtract(const Duration(seconds: 30));
+        if (!warningTime.isAfter(DateTime.now())) {
+          await os.complete(sessionId: id, title: end.title, body: end.body);
+        } else {
+          await os.schedule(
+            sessionId: id,
+            at: warningTime,
+            title: end.title,
+            body: end.body,
+          );
+        }
       }
     });
   }
@@ -133,20 +139,29 @@ class TimerNotificationServiceImpl implements TimerNotificationService {
   }
 
   @override
-  Future<void> onSessionCompleted(SessionType type) async {
+  Future<void> onSessionAlmostEnding(SessionType type) {
+    if (type != SessionType.work ||
+        _endTime == null ||
+        !_endTime!.isAfter(DateTime.now())) {
+      return Future.value();
+    }
     final id = _sessionId;
     final end = _message();
-    final revision = ++_revision;
-    _endTime = null;
-    final notification = _enqueue(() async {
+    final revision = _revision;
+    return _enqueue(() async {
       final settings = await ref.read(notificationSettingsProvider.future);
       if (revision != _revision) return;
-      if (type == SessionType.work && settings.endEnabled && id != null) {
+      if (settings.endEnabled && id != null) {
         await os.complete(sessionId: id, title: end.title, body: end.body);
       } else {
         await os.cancel();
       }
     });
+  }
+
+  @override
+  Future<void> onSessionCompleted(SessionType type) async {
+    final notification = cancel();
     // Haptics remain independent of OS permission and notification preferences.
     if (type == SessionType.work) {
       final setting = ref.read(hapticSettingProvider);

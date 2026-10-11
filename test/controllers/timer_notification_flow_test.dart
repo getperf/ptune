@@ -40,6 +40,7 @@ class Notifications implements TimerNotificationService {
   final starts = <bool>[];
   final events = <String>[];
   int cancels = 0;
+  int warnings = 0;
   @override
   Future<void> onTimerRunning(
     SessionType type,
@@ -62,6 +63,11 @@ class Notifications implements TimerNotificationService {
 
   @override
   void refresh() {}
+  @override
+  Future<void> onSessionAlmostEnding(SessionType type) async {
+    if (type == SessionType.work) warnings++;
+  }
+
   @override
   void dispose() {}
 }
@@ -145,6 +151,21 @@ void main() {
       summary.pending.complete([]);
       await Future<void>.delayed(Duration.zero);
       expect(notifications.starts, [false]);
+    },
+  );
+
+  test(
+    'crossing below 30 seconds warns once without waiting for completion',
+    () async {
+      final (container, controller, notifications, _) = await setup();
+      controller.start();
+      container.read(remainingTimeProvider.notifier).start(29);
+      await Future<void>.delayed(const Duration(milliseconds: 1100));
+      expect(notifications.warnings, 1);
+      expect(notifications.events, isEmpty);
+      await Future<void>.delayed(const Duration(milliseconds: 1100));
+      expect(notifications.warnings, 1);
+      controller.stop();
     },
   );
 

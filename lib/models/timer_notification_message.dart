@@ -10,7 +10,7 @@ class TimerNotificationMessage {
   static TimerNotificationMessage start(MyTask? task, String? parentTitle) =>
       TimerNotificationMessage(
         '🟢 作業開始',
-        _body(task, parentTitle, actual: true),
+        _body(task, parentTitle),
       );
 
   static TimerNotificationMessage end(
@@ -24,25 +24,18 @@ class TimerNotificationMessage {
         ? '${breakSeconds ~/ 60}分'
         : '$breakSeconds秒';
     final title = safeMode
-        ? '🔴 作業終了'
-        : '🔴 作業終了 → ${nextBreak.label}($duration)';
-    return TimerNotificationMessage(
-      title,
-      _body(task, parentTitle, actual: false),
-    );
+        ? '🔴 まもなく作業終了'
+        : '🔴 まもなく作業終了 → ${nextBreak.label}($duration)';
+    return TimerNotificationMessage(title, _body(task, parentTitle));
   }
 
-  static String _body(
-    MyTask? task,
-    String? parentTitle, {
-    required bool actual,
-  }) {
+  // 実績は本文作成時点の値。OS予約分は予約時のスナップショットになる。
+  static String _body(MyTask? task, String? parentTitle) {
     final pomodoro = task?.pomodoro;
     return [
       if (parentTitle != null && parentTitle.isNotEmpty) parentTitle,
       task?.title ?? 'タスクなし',
-      if (pomodoro != null)
-        (actual ? pomodoro : pomodoro.copyWith(actual: null)).toDisplayString(),
+      if (pomodoro != null) pomodoro.toDisplayString(),
     ].join('\n');
   }
 }
