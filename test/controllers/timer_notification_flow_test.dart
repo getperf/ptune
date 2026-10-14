@@ -19,6 +19,7 @@ import 'package:ptune/states/remaining_time_state.dart';
 import 'package:ptune/utils/logger.dart';
 import 'package:ptune/states/blink_notifier.dart';
 import 'package:ptune/providers/task_provider.dart';
+import 'package:ptune/providers/task_review/operation_miss_candidate_provider.dart';
 import 'package:ptune/services/task_service_interface.dart';
 
 class NoBlink extends BlinkNotifier {
@@ -113,6 +114,7 @@ void main() {
     );
     addTearDown(container.dispose);
     container.read(autoModeProvider);
+    container.read(tasksProvider);
     await Future<void>.delayed(Duration.zero);
     await container.read(autoModeProvider.notifier).set(AutoMode.auto);
     return (
@@ -189,15 +191,22 @@ void main() {
     final (container, controller, notifications, _) = await setup();
     await container.read(autoModeProvider.notifier).set(AutoMode.autoSafe);
     controller.start();
-    container.read(selectedTimerTaskProvider.notifier).state = const MyTask(
-      id: 'over',
-      title: '超過',
-      pomodoro: PomodoroInfo(planned: 0, actual: 5),
-    );
+    container.read(tasksProvider.notifier).replaceAll([
+      const MyTask(
+        id: 'over',
+        title: '超過',
+        pomodoro: PomodoroInfo(planned: 0, actual: 5),
+      ),
+    ]);
+    container.read(selectedTimerTaskIdProvider.notifier).state = 'over';
     container.read(remainingTimeProvider.notifier).start(0);
     await Future<void>.delayed(const Duration(milliseconds: 1100));
     expect(notifications.events, ['work', 'save']);
     expect(notifications.starts, [false]);
     expect(container.read(sessionTypeProvider), SessionType.work);
+    expect(
+      container.read(operationMissCandidateTaskIdsProvider),
+      contains('over'),
+    );
   });
 }

@@ -219,6 +219,7 @@ class TimerController {
       _completionInProgress = false;
     }
   }
+
   /// 完了タスクの「一時的な復帰」を必要に応じて行う
   /// - IMPORTANT: タスク切替時には selectedTimerTask を上書きしない
   Future<void> _revertCompletedTaskIfNeeded({String? intendedTaskId}) async {

@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/services.dart';
 import 'package:ptune/models/my_task.dart';
 import 'package:ptune/models/pomodoro_info.dart';
 import 'package:ptune/models/pomodoro_scheduler.dart';
@@ -75,50 +77,62 @@ void main() {
     WakelockPlusPlatformInterface.instance = _FakeWakelockPlusPlatform();
   });
 
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('ptune/notification_permissions'),
+          (_) async => null,
+        );
+  });
+
   group('TimerController.switchTask', () {
-    test('flushes partial summary for the previous task before switching', () async {
-      final taskA = MyTask(
-        id: 'task-a',
-        title: 'Task A',
-        pomodoro: const PomodoroInfo(planned: 1),
-      );
-      final taskB = MyTask(
-        id: 'task-b',
-        title: 'Task B',
-        pomodoro: const PomodoroInfo(planned: 1),
-      );
-      final fakeService = _FakeTaskService([taskA, taskB]);
+    test(
+      'flushes partial summary for the previous task before switching',
+      () async {
+        final taskA = MyTask(
+          id: 'task-a',
+          title: 'Task A',
+          pomodoro: const PomodoroInfo(planned: 1),
+        );
+        final taskB = MyTask(
+          id: 'task-b',
+          title: 'Task B',
+          pomodoro: const PomodoroInfo(planned: 1),
+        );
+        final fakeService = _FakeTaskService([taskA, taskB]);
 
-      final container = ProviderContainer(
-        overrides: [
-          taskServiceProvider.overrideWithValue(fakeService),
-          pomodoroSchedulerProvider.overrideWithValue(
-            PomodoroScheduler(isDemo: true),
-          ),
-        ],
-      );
-      addTearDown(container.dispose);
+        final container = ProviderContainer(
+          overrides: [
+            taskServiceProvider.overrideWithValue(fakeService),
+            pomodoroSchedulerProvider.overrideWithValue(
+              PomodoroScheduler(isDemo: true),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
 
-      container.read(tasksProvider);
-      await Future<void>.delayed(Duration.zero);
+        container.read(tasksProvider);
+        await Future<void>.delayed(Duration.zero);
 
-      container.read(selectedTimerTaskIdProvider.notifier).state = taskA.id;
-      final controller = container.read(timerControllerProvider);
+        container.read(selectedTimerTaskIdProvider.notifier).state = taskA.id;
+        final controller = container.read(timerControllerProvider);
 
-      controller.start();
+        controller.start();
 
-      container.read(selectedTimerTaskIdProvider.notifier).state = taskB.id;
-      await controller.switchTask();
+        container.read(selectedTimerTaskIdProvider.notifier).state = taskB.id;
+        await controller.switchTask();
 
-      final savedTaskA = fakeService.savedTasks.lastWhere(
-        (task) => task.id == taskA.id,
-      );
+        final savedTaskA = fakeService.savedTasks.lastWhere(
+          (task) => task.id == taskA.id,
+        );
 
-      expect(savedTaskA.pomodoro?.actual, isNotNull);
-      expect(savedTaskA.pomodoro!.actual!, greaterThan(0));
-      expect(container.read(selectedTimerTaskProvider)?.id, taskB.id);
+        expect(savedTaskA.pomodoro?.actual, isNotNull);
+        expect(savedTaskA.pomodoro!.actual!, greaterThan(0));
+        expect(container.read(selectedTimerTaskProvider)?.id, taskB.id);
 
-      controller.pause();
-    });
+        controller.pause();
+      },
+    );
   });
 }

@@ -10,8 +10,8 @@
 
 ## Androidビルドツールの版（2026-10-10）
 
-現在のFlutter SDKの必須チェックに合わせ、Gradle Wrapperは8.14.3、
-Android Gradle Pluginは8.11.1、Kotlin Gradle Pluginは2.2.20を使用する。
+現在のFlutter SDKの必須チェックに合わせ、Gradle Wrapperは9.3.1、
+Android Gradle Pluginは9.1.0、Kotlin Gradle Pluginは2.4.0を使用する。
 Gradle 8.12ではアプリのコンパイル前に最低版チェックで停止する。
 版は `android/gradle/wrapper/gradle-wrapper.properties` と
 `android/settings.gradle.kts` に固定する。
@@ -23,7 +23,7 @@ flutter run --debug -d <device-id>
 
 初回はGradleと依存関係のダウンロードで時間がかかる。
 将来の推奨版への警告と、必須条件のエラーは区別する。
-AGP 9への移行は今回の修正範囲に含めない。
+main の AGP 9 移行を維持し、通知機能を統合している。
 
 
 ## 1. Windows 11 初期セットアップ
@@ -283,9 +283,9 @@ flutter run -d device
 | | 値 | 決まり方 |
 |---|---|---|
 | Flutter / Dart | 3.47.4 / 3.13.3 | |
-| Gradle | **8.14.5** | Flutter 3.47.4 の下限が 8.14.0 |
-| AGP | **8.11.2** | KGP 2.2.x と組めるのは 8.12 未満まで |
-| Kotlin（KGP） | **2.2.21** | Flutter 3.47.4 の下限が 2.2.20 |
+| Gradle | **9.3.1** | main のビルド設定を維持 |
+| AGP | **9.1.0** | main のビルド設定を維持 |
+| Kotlin（KGP） | **2.4.0** | main のビルド設定を維持 |
 | JDK | 21 | |
 
 **この3つは同時にしか動かせない。** Flutter は KGP↔AGP・AGP↔Gradle・KGP↔Gradle の3つの互換表を

@@ -142,7 +142,8 @@ void main() {
     await container
         .read(notificationSettingsProvider.notifier)
         .set(startEnabled: true, endEnabled: true);
-    container.read(selectedTimerTaskProvider.notifier).state = task;
+    container.read(tasksProvider.notifier).replaceAll([task]);
+    container.read(selectedTimerTaskIdProvider.notifier).state = task.id;
     return (container, container.read(timerNotificationServiceProvider), fake);
   }
 
@@ -177,22 +178,25 @@ void main() {
       expect(os.scheduled, isNull);
     },
   );
-  test('refresh updates reserved body with partially committed actual', () async {
-    final (container, service, os) = await setup();
-    await service.onTimerRunning(
-      SessionType.work,
-      DateTime.now().add(const Duration(minutes: 1)),
-      newSession: true,
-    );
-    final id = os.scheduled;
-    container.read(selectedTimerTaskProvider.notifier).state = task.copyWith(
-      pomodoro: const PomodoroInfo(planned: 2, actual: 2.4),
-    );
-    service.refresh();
-    await Future<void>.delayed(Duration.zero);
-    expect(os.scheduled, id);
-    expect(os.body, '検証\n🍅x2 ✅x2.4');
-  });
+  test(
+    'refresh updates reserved body with partially committed actual',
+    () async {
+      final (container, service, os) = await setup();
+      await service.onTimerRunning(
+        SessionType.work,
+        DateTime.now().add(const Duration(minutes: 1)),
+        newSession: true,
+      );
+      final id = os.scheduled;
+      container.read(tasksProvider.notifier).replaceAll([
+        task.copyWith(pomodoro: const PomodoroInfo(planned: 2, actual: 2.4)),
+      ]);
+      service.refresh();
+      await Future<void>.delayed(Duration.zero);
+      expect(os.scheduled, id);
+      expect(os.body, '検証\n🍅x2 ✅x2.4');
+    },
+  );
   test(
     'OS delivery followed by app completion does not duplicate end',
     () async {
